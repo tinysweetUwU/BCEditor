@@ -56,24 +56,11 @@ struct ToolsView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 16) {
-                    NavigationLink {
-                        CLITerminalView()
-                    } label: {
-                        Label("Full Editor — tất cả chức năng", systemImage: "pencil.and.list.clipboard")
-                            .font(.headline)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding()
-                            .background(.orange.gradient, in: RoundedRectangle(cornerRadius: 18))
-                            .foregroundStyle(.white)
-                    }
-
-                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
                     ForEach(tools) { tool in
                         NavigationLink(value: tool) {
                             ToolTile(tool: tool)
                         }
-                    }
                     }
                 }
                 .padding()

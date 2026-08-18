@@ -18,8 +18,6 @@ struct RootView: View {
                     .tabItem { Label("Cài đặt", systemImage: "gearshape.fill") }
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .ignoresSafeArea(.keyboard)
         .tint(.orange)
         .task {
             store.prepareFilesDirectories()
