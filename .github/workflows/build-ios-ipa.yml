@@ -19,9 +19,10 @@ jobs:
       - name: Download embedded Python for iOS
         run: |
           mkdir -p Vendor iOS/PythonRuntime
-          ASSET_URL=$(curl -fsSL https://api.github.com/repos/beeware/Python-Apple-support/releases/latest | jq -r '.assets[] | select((.name | ascii_downcase | contains("ios")) and (.name | endswith(".tar.gz"))) | .browser_download_url' | head -n 1)
-          test -n "$ASSET_URL"
-          curl -fsSL "$ASSET_URL" -o "$RUNNER_TEMP/python-ios.tar.gz"
+          # Use the release download endpoint directly so an unauthenticated
+          # GitHub API rate limit cannot prevent the IPA build from starting.
+          ASSET_URL="https://github.com/beeware/Python-Apple-support/releases/latest/download/Python-3.14-iOS-support.b10.tar.gz"
+          curl --retry 3 --fail --location "$ASSET_URL" -o "$RUNNER_TEMP/python-ios.tar.gz"
           tar -xzf "$RUNNER_TEMP/python-ios.tar.gz" -C Vendor
           PYTHON_XCFRAMEWORK=$(find Vendor -type d -name 'Python.xcframework' -print -quit)
           test -n "$PYTHON_XCFRAMEWORK"
