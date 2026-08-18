@@ -6,21 +6,20 @@ struct RootView: View {
     @State private var importing = false
 
     var body: some View {
-        GeometryReader { proxy in
+        TabView {
             TabView {
-                HomeView(openImporter: { importing = true })
+                HomeView()
                     .tabItem { Label("Home", systemImage: "house.fill") }
                 ToolsView()
                     .tabItem { Label("Tools", systemImage: "wrench.and.screwdriver.fill") }
                 SaveView(openImporter: { importing = true })
                     .tabItem { Label("Save", systemImage: "externaldrive.fill") }
-                CLITerminalView()
-                    .tabItem { Label("CLI", systemImage: "terminal.fill") }
                 SettingsView()
                     .tabItem { Label("Cài đặt", systemImage: "gearshape.fill") }
             }
-            .frame(width: proxy.size.width, height: proxy.size.height)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .ignoresSafeArea(.keyboard)
         .tint(.orange)
         .task {
             store.prepareFilesDirectories()
@@ -43,7 +42,6 @@ struct RootView: View {
 
 struct HomeView: View {
     @EnvironmentObject private var store: SaveStore
-    let openImporter: () -> Void
     var body: some View {
         NavigationStack {
             ScrollView {

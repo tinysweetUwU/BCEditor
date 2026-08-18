@@ -102,6 +102,7 @@ struct ToolDetail: View {
     @EnvironmentObject private var store: SaveStore
     let tool: EditorTool
     @State private var catFood = ""
+    @State private var showingEditor = false
 
     var body: some View {
         Form {
@@ -115,6 +116,17 @@ struct ToolDetail: View {
                         }
                     }
                     .disabled(!store.hasSave)
+                }
+            } else {
+                Section("Editor") {
+                    Button {
+                        showingEditor = true
+                    } label: {
+                        Label("Open \(tool.title) editor", systemImage: "pencil.and.outline")
+                    }
+                    .disabled(!store.hasSave)
+                    Text("Chọn một mục để chỉnh sửa trực tiếp trên save đang mở.")
+                        .font(.footnote).foregroundStyle(.secondary)
                 }
             }
 
@@ -132,6 +144,11 @@ struct ToolDetail: View {
         .navigationTitle(tool.title)
         .onAppear {
             catFood = store.summary.map { String($0.catFood) } ?? ""
+        }
+        .alert("Editor đang được mở rộng", isPresented: $showingEditor) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("Mục Cat Food đã chỉnh sửa trực tiếp. Các nhóm còn lại sẽ dùng cùng bộ máy chỉnh sửa trong bản cập nhật tiếp theo.")
         }
     }
 }
