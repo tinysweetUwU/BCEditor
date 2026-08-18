@@ -1,317 +1,46 @@
 import SwiftUI
 
-struct GitHubProfile: Decodable {
-    let login: String
-    let name: String?
-    let avatarURL: URL
-    let htmlURL: URL
-
-    enum CodingKeys: String, CodingKey {
-        case login, name
-        case avatarURL = "avatar_url"
-        case htmlURL = "html_url"
-    }
+struct GitHubProfile: Decodable { let login: String; let name: String?; let avatarURL: URL; let htmlURL: URL
+    enum CodingKeys: String, CodingKey { case login, name; case avatarURL = "avatar_url"; case htmlURL = "html_url" }
+}
+@MainActor final class GitHubAuthor: ObservableObject {
+    @Published var profile = GitHubProfile(login: "tinysweetUwU", name: "tinysweet", avatarURL: URL(string: "https://avatars.githubusercontent.com/u/110331292?v=4")!, htmlURL: URL(string: "https://github.com/tinysweetUwU")!)
+    init() { Task { if let url = URL(string: "https://api.github.com/users/tinysweetUwU") { var req = URLRequest(url: url); req.setValue("BCEditor", forHTTPHeaderField: "User-Agent"); if let (data, _) = try? await URLSession.shared.data(for: req), let profile = try? JSONDecoder().decode(GitHubProfile.self, from: data) { self.profile = profile } } } }
 }
 
-@MainActor
-final class GitHubAuthor: ObservableObject {
-    @Published var profile = GitHubProfile(
-        login: "tinysweetUwU",
-        name: "tinysweet",
-        avatarURL: URL(string: "https://avatars.githubusercontent.com/u/110331292?v=4")!,
-        htmlURL: URL(string: "https://github.com/tinysweetUwU")!
-    )
-
-    init() {
-        Task {
-            guard let url = URL(string: "https://api.github.com/users/tinysweetUwU") else { return }
-            var request = URLRequest(url: url)
-            request.setValue("BCEditor", forHTTPHeaderField: "User-Agent")
-            if let (data, _) = try? await URLSession.shared.data(for: request),
-               let fetched = try? JSONDecoder().decode(GitHubProfile.self, from: data) {
-                profile = fetched
-            }
-        }
-    }
-}
-
-struct EditorTool: Identifiable, Hashable {
-    let id = UUID()
-    let title: String
-    let icon: String
-    let color: Color
-    let features: [String]
-    let menuIndex: Int
-}
+struct EditorTool: Identifiable, Hashable { let id = UUID(); let title: String; let icon: String; let color: Color; let features: [String] }
 
 struct ToolsView: View {
-    private let tools: [EditorTool] = [
-        EditorTool(title: "Items", icon: "shippingbox.fill", color: .orange, features: ["Cat Food", "XP", "Normal / Rare / Platinum Tickets", "NP, Leadership, Battle Items", "Catseyes, Catfruit, Catamins, Orbs"], menuIndex: 2),
-        EditorTool(title: "Cats & Skills", icon: "pawprint.fill", color: .pink, features: ["Unlock / remove Cats", "Level, Plus Level, Forms", "Talents & Cat Guide", "Special Skills & Cat Storage"], menuIndex: 3),
-        EditorTool(title: "Levels", icon: "map.fill", color: .indigo, features: ["Story, SOL, Event & Collab", "Towers, Gauntlets, Zero Legends", "Aku Realm, Enigma, Outbreaks", "Treasures, Dojo & Challenge"], menuIndex: 4),
-        EditorTool(title: "Gamatoto", icon: "hammer.fill", color: .teal, features: ["Engineers & Base Materials", "Gamatoto XP / Helpers", "Ototo Cat Cannon", "Cat Shrine"], menuIndex: 5),
-        EditorTool(title: "Account", icon: "person.crop.circle.fill", color: .blue, features: ["Inquiry Code", "Password Refresh Token", "Managed Items", "Region & Game Version"], menuIndex: 6),
-        EditorTool(title: "Gatya & Other", icon: "sparkles", color: .purple, features: ["Gatya Seeds", "Missions & Medals", "Gold Pass & Playtime"], menuIndex: 7),
-        EditorTool(title: "Fixes", icon: "wrench.and.screwdriver.fill", color: .red, features: ["Gamatoto crash", "Ototo crash", "Time errors"], menuIndex: 8)
+    private let tools = [
+        EditorTool(title: "Items", icon: "shippingbox.fill", color: .orange, features: ["Cat Food", "XP", "Tickets", "NP / Leadership", "Catfruit / Catseyes / Catamins", "Battle Items"]),
+        EditorTool(title: "Cats & Skills", icon: "pawprint.fill", color: .pink, features: ["Cat ID / level", "Unlock and max forms", "Talents", "Cat Storage"]),
+        EditorTool(title: "Levels", icon: "map.fill", color: .indigo, features: ["Aku Realm", "All available stages"]),
+        EditorTool(title: "Gamatoto", icon: "hammer.fill", color: .teal, features: ["XP / expedition", "Ototo cannons"]),
+        EditorTool(title: "Account", icon: "person.crop.circle.fill", color: .blue, features: ["Equipment menu", "Gold Pass reset"]),
+        EditorTool(title: "Gatya & Other", icon: "sparkles", color: .purple, features: ["Gatya seeds", "Missions", "Medals"]),
+        EditorTool(title: "Fixes", icon: "wrench.and.screwdriver.fill", color: .red, features: ["Gamatoto", "Ototo", "Time errors"])
     ]
-
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                LazyVStack(spacing: 14) {
-                    ForEach(tools) { tool in
-                        NavigationLink {
-                            ToolDetail(tool: tool)
-                        } label: {
-                            ToolTile(tool: tool)
-                        }
-                    }
-                }
-                .padding()
-            }
-            .navigationTitle("Tools")
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-        }
-    }
+    var body: some View { NavigationStack { ScrollView { LazyVStack(spacing: 14) { ForEach(tools) { tool in NavigationLink { ToolDetail(tool: tool) } label: { ToolTile(tool: tool) } } }.padding() }.navigationTitle("Tools") } }
 }
-
-struct ToolTile: View {
-    let tool: EditorTool
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Image(systemName: tool.icon)
-                .font(.title)
-                .foregroundStyle(.white)
-                .frame(width: 44, height: 44)
-                .background(tool.color.gradient, in: RoundedRectangle(cornerRadius: 13))
-            Text(tool.title)
-                .font(.headline)
-                .foregroundStyle(.primary)
-            Text("\(tool.features.count) groups")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, minHeight: 138, alignment: .leading)
-        .padding()
-        .background(.background, in: RoundedRectangle(cornerRadius: 20))
-        .shadow(color: .black.opacity(0.08), radius: 8, y: 3)
-    }
-}
+struct ToolTile: View { let tool: EditorTool; var body: some View { HStack(spacing: 14) { Image(systemName: tool.icon).font(.title2).foregroundStyle(.white).frame(width: 48, height: 48).background(tool.color.gradient, in: RoundedRectangle(cornerRadius: 13)); VStack(alignment: .leading) { Text(tool.title).font(.headline); Text("(tool.features.count) editors").font(.caption).foregroundStyle(.secondary) }; Spacer(); Image(systemName: "chevron.right").foregroundStyle(.tertiary) }.padding().frame(maxWidth: .infinity).background(.background, in: RoundedRectangle(cornerRadius: 18)).shadow(color: .black.opacity(0.08), radius: 8, y: 3) } }
 
 struct ToolDetail: View {
-    @EnvironmentObject private var store: SaveStore
-    let tool: EditorTool
-    @State private var catFood = ""
-    @State private var xp = ""
-    @State private var normalTickets = ""
-    @State private var rareTickets = ""
-    @State private var platinumTickets = ""
-    @State private var platinumShards = ""
-    @State private var np = ""
-    @State private var leadership = ""
-    @State private var rareSeed = ""
-    @State private var normalSeed = ""
-    @State private var eventSeed = ""
-    @State private var catID = "0"
-    @State private var catLevel = "1"
-    @State private var showingEditor = false
-
-    var body: some View {
-        Form {
-            if tool.title == "Items" {
-                Section("Direct edit") {
-                    directField("Cat Food", text: $catFood, field: "catfood")
-                    directField("XP", text: $xp, field: "xp")
-                    directField("Normal Tickets", text: $normalTickets, field: "normal_tickets")
-                    directField("Rare Tickets", text: $rareTickets, field: "rare_tickets")
-                    directField("Platinum Tickets", text: $platinumTickets, field: "platinum_tickets")
-                    directField("Platinum Shards", text: $platinumShards, field: "platinum_shards")
-                    directField("NP", text: $np, field: "np")
-                    directField("Leadership", text: $leadership, field: "leadership")
-                    Button("Max all basic items", systemImage: "arrow.up.to.line") {
-                        store.applyNativeAction("max_items")
-                    }
-                    .disabled(!store.hasSave)
-                    Button("Max Catfruit, Catseyes and Catamins", systemImage: "leaf.fill") {
-                        store.applyNativeAction("max_resources")
-                    }
-                    .disabled(!store.hasSave)
-                    Button("Max Battle Items", systemImage: "shield.fill") {
-                        store.applyNativeAction("max_battle_items")
-                    }
-                    .disabled(!store.hasSave)
-                }
-            } else if tool.title == "Cats & Skills" {
-                Section("Direct edit") {
-                    TextField("Cat ID", text: $catID).keyboardType(.numberPad)
-                    TextField("Base level", text: $catLevel).keyboardType(.numberPad)
-                    Button("Apply cat level", systemImage: "pencil") {
-                        if let id = Int(catID), let level = Int(catLevel), id >= 0, level >= 1, id < 10000, level < 65536 {
-                            store.applyNativeAction("set_cat_level", value: (id << 16) | level)
-                        }
-                    }
-                    .disabled(!store.hasSave)
-                    Button("Unlock all cats", systemImage: "lock.open.fill") {
-                        store.applyNativeAction("unlock_all_cats")
-                    }
-                    .disabled(!store.hasSave)
-                    Button("Unlock, max level and forms", systemImage: "star.fill") {
-                        store.applyNativeAction("max_cats")
-                    }
-                    .disabled(!store.hasSave)
-                    Button("Max all talents", systemImage: "sparkles") { store.applyNativeAction("max_talents") }
-                        .disabled(!store.hasSave)
-                    Button("Fill Cat Storage", systemImage: "tray.full.fill") { store.applyNativeAction("fill_cat_storage") }
-                        .disabled(!store.hasSave)
-                    Button("Clear Cat Storage", systemImage: "trash") { store.applyNativeAction("clear_cat_storage") }
-                        .disabled(!store.hasSave)
-                }
-            } else if tool.title == "Levels" {
-                Section("Direct edit") {
-                    Button("Unlock Aku Realm", systemImage: "lock.open.fill") {
-                        store.applyNativeAction("unlock_aku_realm")
-                    }
-                    .disabled(!store.hasSave)
-                    Button("Clear all available stages", systemImage: "map.fill") {
-                        store.applyNativeAction("clear_all_maps")
-                    }
-                    .disabled(!store.hasSave)
-                }
-            } else if tool.title == "Gamatoto" {
-                Section("Direct edit") {
-                    Button("Max Gamatoto XP / finish expedition", systemImage: "hammer.fill") { store.applyNativeAction("max_gamatoto") }
-                        .disabled(!store.hasSave)
-                    Button("Max Ototo cannon levels", systemImage: "bolt.fill") { store.applyNativeAction("max_ototo_cannons") }
-                        .disabled(!store.hasSave)
-                }
-            } else if tool.title == "Account" {
-                Section("Direct edit") {
-                    Button("Unlock equipment menu", systemImage: "lock.open.fill") { store.applyNativeAction("unlock_equip_menu") }
-                        .disabled(!store.hasSave)
-                    Button("Reset Gold Pass data", systemImage: "arrow.counterclockwise") { store.applyNativeAction("reset_officer_pass") }
-                        .disabled(!store.hasSave)
-                }
-            } else if tool.title == "Gatya & Other" {
-                Section("Direct edit") {
-                    directField("Rare Gatya Seed", text: $rareSeed, field: "rare_seed")
-                    directField("Normal Gatya Seed", text: $normalSeed, field: "normal_seed")
-                    directField("Event Gatya Seed", text: $eventSeed, field: "event_seed")
-                    Button("Complete all missions", systemImage: "checkmark.seal.fill") { store.applyNativeAction("complete_missions") }
-                        .disabled(!store.hasSave)
-                    Button("Unlock medals", systemImage: "rosette") { store.applyNativeAction("unlock_medals") }
-                        .disabled(!store.hasSave)
-                }
-            } else if tool.title == "Fixes" {
-                Section("Direct fixes") {
-                    Button("Fix Gamatoto crash", systemImage: "wrench.and.screwdriver") { store.applyNativeAction("fix_gamatoto_crash") }
-                        .disabled(!store.hasSave)
-                    Button("Fix Ototo crash", systemImage: "hammer.fill") { store.applyNativeAction("fix_ototo_crash") }
-                        .disabled(!store.hasSave)
-                    Button("Fix time errors", systemImage: "clock.arrow.2.circlepath") { store.applyNativeAction("fix_time_errors") }
-                        .disabled(!store.hasSave)
-                }
-            } else {
-                Section("Editor") {
-                    Button {
-                        showingEditor = true
-                    } label: {
-                        Label("Open \(tool.title) editor", systemImage: "pencil.and.outline")
-                    }
-                    .disabled(!store.hasSave)
-                    Text("Chọn một mục để chỉnh sửa trực tiếp trên save đang mở.")
-                        .font(.footnote).foregroundStyle(.secondary)
-                }
-            }
-
-            Section("Features") {
-                ForEach(tool.features, id: \.self) { feature in
-                    Label(feature, systemImage: "checkmark.circle")
-                }
-            }
-
-            Section("Status") {
-                Text(store.hasSave ? "A save is ready to edit." : "Open SAVE_DATA from the Save tab first.")
-                    .foregroundStyle(store.hasSave ? .green : .secondary)
-            }
-        }
-        .navigationTitle(tool.title)
-        .onAppear {
-            refreshValues()
-        }
-        .onChange(of: store.basicValues) { _, _ in refreshValues() }
-        .alert("Editor đang được mở rộng", isPresented: $showingEditor) {
-            Button("OK", role: .cancel) { }
-        } message: {
-            Text("Mục Cat Food đã chỉnh sửa trực tiếp. Các nhóm còn lại sẽ dùng cùng bộ máy chỉnh sửa trong bản cập nhật tiếp theo.")
-        }
-    }
-
-    @ViewBuilder
-    private func directField(_ title: String, text: Binding<String>, field: String) -> some View {
-        HStack {
-            TextField(title, text: text).keyboardType(.numberPad)
-            Button("Apply") {
-                if let value = Int(text.wrappedValue) { store.updateBasicItem(field, value: value) }
-            }
-            .disabled(!store.hasSave || Int(text.wrappedValue) == nil)
-        }
-    }
-
-    private func refreshValues() {
-        catFood = store.basicValues["catfood"].map { String($0) } ?? store.summary.map { String($0.catFood) } ?? ""
-        xp = store.basicValues["xp"].map { String($0) } ?? ""
-        normalTickets = store.basicValues["normal_tickets"].map { String($0) } ?? ""
-        rareTickets = store.basicValues["rare_tickets"].map { String($0) } ?? ""
-        platinumTickets = store.basicValues["platinum_tickets"].map { String($0) } ?? ""
-        platinumShards = store.basicValues["platinum_shards"].map { String($0) } ?? ""
-        np = store.basicValues["np"].map { String($0) } ?? ""
-        leadership = store.basicValues["leadership"].map { String($0) } ?? ""
-        rareSeed = store.basicValues["rare_seed"].map { String($0) } ?? ""
-        normalSeed = store.basicValues["normal_seed"].map { String($0) } ?? ""
-        eventSeed = store.basicValues["event_seed"].map { String($0) } ?? ""
-    }
+    @EnvironmentObject private var store: SaveStore; let tool: EditorTool
+    @State private var values: [String: String] = ["catfood":"", "xp":"", "normal_tickets":"", "rare_tickets":"", "platinum_tickets":"", "platinum_shards":"", "np":"", "leadership":"", "rare_seed":"", "normal_seed":"", "event_seed":""]
+    @State private var catID = "0"; @State private var catLevel = "1"
+    var body: some View { Form {
+        if tool.title == "Items" { Section("Direct edit") { field("Cat Food", "catfood"); field("XP", "xp"); field("Normal Tickets", "normal_tickets"); field("Rare Tickets", "rare_tickets"); field("Platinum Tickets", "platinum_tickets"); field("Platinum Shards", "platinum_shards"); field("NP", "np"); field("Leadership", "leadership"); action("Max basic items", "max_items", "arrow.up.to.line"); action("Max resources", "max_resources", "leaf.fill"); action("Max battle items", "max_battle_items", "shield.fill") } }
+        if tool.title == "Cats & Skills" { Section("Direct edit") { TextField("Cat ID", text: $catID).keyboardType(.numberPad); TextField("Base level", text: $catLevel).keyboardType(.numberPad); Button("Apply cat level", systemImage: "pencil") { if let id = Int(catID), let level = Int(catLevel) { store.applyNativeAction("set_cat_level", value: (id << 16) | level) } }.disabled(!store.hasSave); action("Unlock all cats", "unlock_all_cats", "lock.open.fill"); action("Max cats and forms", "max_cats", "star.fill"); action("Max talents", "max_talents", "sparkles"); action("Fill Cat Storage", "fill_cat_storage", "tray.full.fill"); action("Clear Cat Storage", "clear_cat_storage", "trash") } }
+        if tool.title == "Levels" { Section("Direct edit") { action("Unlock Aku Realm", "unlock_aku_realm", "lock.open.fill"); action("Clear available stages", "clear_all_maps", "map.fill") } }
+        if tool.title == "Gamatoto" { Section("Direct edit") { action("Max Gamatoto XP", "max_gamatoto", "hammer.fill"); action("Max Ototo cannons", "max_ototo_cannons", "bolt.fill") } }
+        if tool.title == "Account" { Section("Direct edit") { action("Unlock equipment menu", "unlock_equip_menu", "lock.open.fill"); action("Reset Gold Pass", "reset_officer_pass", "arrow.counterclockwise") } }
+        if tool.title == "Gatya & Other" { Section("Direct edit") { field("Rare Gatya Seed", "rare_seed"); field("Normal Gatya Seed", "normal_seed"); field("Event Gatya Seed", "event_seed"); action("Complete missions", "complete_missions", "checkmark.seal.fill"); action("Unlock medals", "unlock_medals", "rosette") } }
+        if tool.title == "Fixes" { Section("Direct fixes") { action("Fix Gamatoto", "fix_gamatoto_crash", "wrench.and.screwdriver"); action("Fix Ototo", "fix_ototo_crash", "hammer.fill"); action("Fix time errors", "fix_time_errors", "clock.arrow.2.circlepath") } }
+        Section("Features") { ForEach(tool.features, id: \.self) { Label($0, systemImage: "checkmark.circle") } }
+    }.navigationTitle(tool.title).onAppear { refresh() }.onChange(of: store.basicValues) { _, _ in refresh() } }
+    @ViewBuilder private func field(_ title: String, _ key: String) -> some View { HStack { TextField(title, text: Binding(get: { values[key] ?? "" }, set: { values[key] = $0 })).keyboardType(.numberPad); Button("Apply") { if let value = Int(values[key] ?? "") { store.updateBasicItem(key, value: value) } }.disabled(!store.hasSave || Int(values[key] ?? "") == nil) } }
+    private func action(_ title: String, _ key: String, _ icon: String) -> some View { Button(title, systemImage: icon) { store.applyNativeAction(key) }.disabled(!store.hasSave) }
+    private func refresh() { for key in values.keys { if let value = store.basicValues[key] { values[key] = String(value) } } }
 }
 
-struct SettingsView: View {
-    @StateObject private var author = GitHubAuthor()
-
-    var body: some View {
-        NavigationStack {
-            List {
-                Section("Application") {
-                    LabeledContent("Version", value: "1.0.1")
-                }
-                Section("Author") {
-                    HStack(spacing: 14) {
-                        AsyncImage(url: author.profile.avatarURL) { phase in
-                            if let image = phase.image {
-                                image.resizable().scaledToFill()
-                            } else {
-                                Image(systemName: "person.crop.circle.fill")
-                                    .resizable().scaledToFit().foregroundStyle(.secondary)
-                            }
-                        }
-                        .frame(width: 56, height: 56)
-                        .clipShape(Circle())
-
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(author.profile.name ?? author.profile.login).font(.headline)
-                            Text("@\(author.profile.login)").font(.caption).foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                        Image(systemName: "chevron.right").foregroundStyle(.tertiary)
-                    }
-                    Link(destination: author.profile.htmlURL) {
-                        Label("Open GitHub repository", systemImage: "link")
-                    }
-                }
-                Section("Safety") {
-                    Text("BCEditor checks the save checksum and creates a backup before changes.")
-                }
-            }
-            .navigationTitle("Settings")
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-        }
-    }
-}
+struct SettingsView: View { @StateObject private var author = GitHubAuthor(); var body: some View { NavigationStack { List { Section("Application") { LabeledContent("Version", value: "1.0.1") }; Section("Author") { HStack { AsyncImage(url: author.profile.avatarURL) { phase in if let image = phase.image { image.resizable().scaledToFill() } else { Image(systemName: "person.crop.circle.fill").resizable().scaledToFit().foregroundStyle(.secondary) } }.frame(width: 56, height: 56).clipShape(Circle()); VStack(alignment: .leading) { Text(author.profile.name ?? author.profile.login).font(.headline); Text("@\(author.profile.login)").font(.caption).foregroundStyle(.secondary) }; Spacer() }; Link(destination: author.profile.htmlURL) { Label("Open GitHub profile", systemImage: "link") } }; Section("Safety") { Text("A backup is created before every native edit.") } }.navigationTitle("Settings") } } }
