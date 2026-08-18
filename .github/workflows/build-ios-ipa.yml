@@ -37,10 +37,19 @@ jobs:
         run: xcodegen generate
       - name: Archive unsigned app
         run: |
-          xcodebuild archive -project BCEditor.xcodeproj -scheme "$SCHEME" -configuration Release -archivePath "$ARCHIVE_PATH" -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO AD_HOC_CODE_SIGNING_ALLOWED=NO
+          mkdir -p build
+          set -o pipefail
+          xcodebuild archive -project BCEditor.xcodeproj -scheme "$SCHEME" -configuration Release -archivePath "$ARCHIVE_PATH" -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO AD_HOC_CODE_SIGNING_ALLOWED=NO 2>&1 | tee build/xcodebuild.log
           mkdir -p "$EXPORT_PATH/Payload"
           cp -R "$ARCHIVE_PATH/Products/Applications/BCEditor.app" "$EXPORT_PATH/Payload/"
           (cd "$EXPORT_PATH" && zip -qry ../BCEditor-unsigned.ipa Payload)
+      - name: Upload build diagnostics
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: BCEditor-build-diagnostics
+          path: build
+          if-no-files-found: warn
       - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
