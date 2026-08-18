@@ -28,5 +28,8 @@ def apply(path: str, action: str, value: int = 0) -> None:
         for name in ("catfood", "xp", "normal_tickets", "rare_tickets", "platinum_tickets", "np", "leadership"):
             if hasattr(save, name) and hasattr(manager, name):
                 setattr(save, name, getattr(manager, name))
+    elif action == "unlock_aku_realm":
+        for stage_id in (255, 256, 257, 258, 265, 266, 268):
+            save.event_stages.clear_map(1, stage_id, 0, False)
 
     save.to_data().to_file(save_path)

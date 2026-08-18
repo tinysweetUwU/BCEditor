@@ -139,6 +139,13 @@ struct ToolDetail: View {
                     }
                     .disabled(!store.hasSave)
                 }
+            } else if tool.title == "Levels" {
+                Section("Direct edit") {
+                    Button("Unlock Aku Realm", systemImage: "lock.open.fill") {
+                        store.applyNativeAction("unlock_aku_realm")
+                    }
+                    .disabled(!store.hasSave)
+                }
             } else {
                 Section("Editor") {
                     Button {
