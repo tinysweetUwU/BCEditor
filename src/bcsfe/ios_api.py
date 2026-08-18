@@ -31,6 +31,12 @@ def apply(path: str, action: str, value: int = 0) -> None:
         for cat in save.cats.cats:
             cat.catguide_collected = True
             cat.gatya_seen = max(cat.gatya_seen, 1)
+    elif action == "unlock_enemy_guide":
+        save.unlock_enemy_guide = 1
+        save.enemy_guide = [1 for _ in save.enemy_guide]
+    elif action == "clear_enemy_guide":
+        save.unlock_enemy_guide = 0
+        save.enemy_guide = [0 for _ in save.enemy_guide]
     elif action == "allow_filibuster":
         save.filibuster_stage_enabled = True
         save.filibuster_stage_id = 0
@@ -47,6 +53,12 @@ def apply(path: str, action: str, value: int = 0) -> None:
         for item in save.cats.storage_items:
             item.item_type = 0
             item.item_id = 0
+    elif action == "set_cat_storage_item":
+        packed = int(value)
+        slot, item_type, item_id = packed & 0xFFFF, (packed >> 16) & 0xFF, (packed >> 24) & 0xFFFF
+        if 0 <= slot < len(save.cats.storage_items):
+            item = save.cats.storage_items[slot]
+            item.item_type, item.item_id = item_type, item_id
     elif action == "set_cat_level":
         cat_id = int(value) >> 16
         level = int(value) & 0xFFFF
@@ -56,9 +68,11 @@ def apply(path: str, action: str, value: int = 0) -> None:
             cat.upgrade.base = max(0, level - 1)
     elif action == "max_items":
         manager = core.core_data.max_value_manager
-        for name in ("catfood", "xp", "normal_tickets", "rare_tickets", "platinum_tickets", "np", "leadership"):
+        for name in ("catfood", "xp", "normal_tickets", "rare_tickets", "platinum_tickets", "platinum_shards", "legend_tickets", "np", "leadership"):
             if hasattr(save, name) and hasattr(manager, name):
                 setattr(save, name, getattr(manager, name))
+        if hasattr(save, "hundred_million_ticket") and hasattr(manager, "hundred_million_tickets"):
+            save.hundred_million_ticket = manager.hundred_million_tickets
     elif action == "max_resources":
         manager = core.core_data.max_value_manager
         for name, limit in (("catfruit", manager.catfruit_new), ("catseyes", manager.catseyes), ("catamins", manager.catamins)):
@@ -70,9 +84,27 @@ def apply(path: str, action: str, value: int = 0) -> None:
         for item in save.battle_items.items:
             item.amount = limit
             item.locked = False
+    elif action == "set_battle_item":
+        packed = int(value)
+        index, amount = packed & 0xFFFF, (packed >> 16) & 0xFFFFFFFF
+        if 0 <= index < len(save.battle_items.items):
+            item = save.battle_items.items[index]
+            item.amount, item.locked = amount, False
+    elif action == "set_resource":
+        packed = int(value)
+        resource, index, amount = packed & 0xFF, (packed >> 8) & 0xFF, (packed >> 16) & 0xFFFFFFFF
+        names = ("catfruit", "catseyes", "catamins")
+        if resource < len(names):
+            values = getattr(save, names[resource], None)
+            if isinstance(values, list) and 0 <= index < len(values):
+                values[index] = amount
     elif action == "clear_all_maps":
         for name in ("story", "event_stages", "ex_stages", "uncanny", "catamin_stages"):
             if hasattr(save, name): _clear_progress(getattr(save, name))
+    elif action == "clear_story_stage":
+        packed = int(value)
+        map_id, star, stage = packed & 0xFF, (packed >> 8) & 0xFF, (packed >> 16) & 0xFFFF
+        save.story.clear_stage(map_id, star, stage, 1, True)
     elif action == "unlock_aku_realm":
         for stage_id in (255, 256, 257, 258, 265, 266, 268):
             save.event_stages.clear_map(1, stage_id, 0, False)
@@ -105,6 +137,10 @@ def apply(path: str, action: str, value: int = 0) -> None:
         save.unlock_equip_menu()
     elif action == "reset_officer_pass":
         save.officer_pass.reset(save)
+    elif action == "set_restart_pack":
+        save.restart_pack = 1
+    elif action == "clear_tutorial":
+        core.StoryChapters.clear_tutorial(save)
     elif action == "complete_missions":
         conditions = core.core_data.get_mission_conditions(save)
         for mission_id in list(save.missions.clear_states):
@@ -124,7 +160,7 @@ def apply(path: str, action: str, value: int = 0) -> None:
 
 _SCALARS = ("catfood", "xp", "normal_tickets", "rare_tickets", "platinum_tickets",
             "legend_tickets", "platinum_shards", "np", "leadership",
-            "rare_seed", "normal_seed", "event_seed")
+            "hundred_million_ticket", "rare_seed", "normal_seed", "event_seed")
 
 def _get_field(save, field):
     return getattr(save.gatya, field) if field.endswith("_seed") else getattr(save, field)

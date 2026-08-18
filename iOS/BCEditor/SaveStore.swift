@@ -80,11 +80,14 @@ final class SaveStore: ObservableObject {
         guard let region = SaveRegion(rawValue: summary.region.rawValue) else { return }
         reseal(region: region)
         summary = SaveSummary(region: region, gameVersion: summary.gameVersion, catFood: amount)
-        self.summary = summary; backup(); message = "Đã cập nhật Cat Food và kiểm tra lại checksum."
+        self.summary = summary
+        basicValues["catfood"] = amount
+        backup()
+        message = "Đã cập nhật Cat Food và kiểm tra checksum."
     }
 
     private func loadBasicValues(from url: URL) {
-        let fields = ["catfood", "xp", "normal_tickets", "rare_tickets", "platinum_tickets", "platinum_shards", "np", "leadership", "rare_seed", "normal_seed", "event_seed"]
+        let fields = ["catfood", "xp", "normal_tickets", "rare_tickets", "platinum_tickets", "legend_tickets", "hundred_million_ticket", "platinum_shards", "np", "leadership", "rare_seed", "normal_seed", "event_seed"]
         let path = url.path
         DispatchQueue.global(qos: .userInitiated).async {
             var values: [String: Int] = [:]
@@ -110,7 +113,7 @@ final class SaveStore: ObservableObject {
         DispatchQueue.global(qos: .userInitiated).async {
             let ok = BCEPythonApplyAction(url.path, action, value)
             DispatchQueue.main.async {
-                self.importSave(from: url)
+                if ok { self.importSave(from: url) }
                 self.message = ok ? "Đã áp dụng thay đổi." : "Không thể áp dụng thay đổi cho save này."
             }
         }
