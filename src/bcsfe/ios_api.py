@@ -27,6 +27,15 @@ def apply(path: str, action: str, value: int = 0) -> None:
             skill.seen = 1
             skill.upgrade.base = max(skill.upgrade.base, 10)
             skill.upgrade.plus = max(skill.upgrade.plus, 20)
+    elif action == "unlock_cat_guide":
+        for cat in save.cats.cats:
+            cat.catguide_collected = True
+            cat.gatya_seen = max(cat.gatya_seen, 1)
+    elif action == "allow_filibuster":
+        save.filibuster_stage_enabled = True
+        save.filibuster_stage_id = 0
+    elif action == "reset_golden_cpus":
+        save.golden_cpu_count = 0
     elif action == "fill_cat_storage":
         for item in save.cats.storage_items:
             item.item_type = 0
