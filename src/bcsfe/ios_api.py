@@ -16,6 +16,23 @@ def apply(path: str, action: str, value: int = 0) -> None:
             cat.set_form_true(save, 3)
             cat.upgrade.base = max(cat.upgrade.base, 8)
             cat.upgrade.plus = max(cat.upgrade.plus, 20)
+    elif action == "max_talents":
+        for cat in save.cats.cats:
+            if cat.talents:
+                cat.unlock(save)
+                for talent in cat.talents:
+                    talent.level = max(talent.level, 10)
+    elif action == "fill_cat_storage":
+        for item in save.cats.storage_items:
+            item.item_type = 0
+            item.item_id = 0
+        for cat, item in zip((c for c in save.cats.cats if c.unlocked), save.cats.storage_items):
+            item.item_type = 1
+            item.item_id = cat.id
+    elif action == "clear_cat_storage":
+        for item in save.cats.storage_items:
+            item.item_type = 0
+            item.item_id = 0
     elif action == "set_cat_level":
         cat_id = int(value) >> 16
         level = int(value) & 0xFFFF
@@ -51,6 +68,12 @@ def apply(path: str, action: str, value: int = 0) -> None:
         save.gamatoto.xp = 2_000_000_000
         save.gamatoto.remaining_seconds = 0
         save.gamatoto.return_flag = True
+    elif action == "max_ototo_cannons":
+        if save.ototo.cannons is None:
+            save.ototo.cannons = core.game.gamoto.ototo.Cannons.init(save.game_version)
+        for cannon in save.ototo.cannons.cannons.values():
+            cannon.development = max(cannon.development, 3)
+            cannon.levels = [max(10, int(level)) for level in cannon.levels]
     elif action == "unlock_equip_menu":
         save.unlock_equip_menu()
     elif action == "reset_officer_pass":

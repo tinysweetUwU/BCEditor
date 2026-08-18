@@ -113,6 +113,8 @@ struct ToolDetail: View {
     @State private var rareSeed = ""
     @State private var normalSeed = ""
     @State private var eventSeed = ""
+    @State private var catID = "0"
+    @State private var catLevel = "1"
     @State private var showingEditor = false
 
     var body: some View {
@@ -138,6 +140,14 @@ struct ToolDetail: View {
                 }
             } else if tool.title == "Cats & Skills" {
                 Section("Direct edit") {
+                    TextField("Cat ID", text: $catID).keyboardType(.numberPad)
+                    TextField("Base level", text: $catLevel).keyboardType(.numberPad)
+                    Button("Apply cat level", systemImage: "pencil") {
+                        if let id = Int(catID), let level = Int(catLevel), id >= 0, level >= 1, id < 10000, level < 65536 {
+                            store.applyNativeAction("set_cat_level", value: (id << 16) | level)
+                        }
+                    }
+                    .disabled(!store.hasSave)
                     Button("Unlock all cats", systemImage: "lock.open.fill") {
                         store.applyNativeAction("unlock_all_cats")
                     }
@@ -146,6 +156,12 @@ struct ToolDetail: View {
                         store.applyNativeAction("max_cats")
                     }
                     .disabled(!store.hasSave)
+                    Button("Max all talents", systemImage: "sparkles") { store.applyNativeAction("max_talents") }
+                        .disabled(!store.hasSave)
+                    Button("Fill Cat Storage", systemImage: "tray.full.fill") { store.applyNativeAction("fill_cat_storage") }
+                        .disabled(!store.hasSave)
+                    Button("Clear Cat Storage", systemImage: "trash") { store.applyNativeAction("clear_cat_storage") }
+                        .disabled(!store.hasSave)
                 }
             } else if tool.title == "Levels" {
                 Section("Direct edit") {
@@ -157,6 +173,8 @@ struct ToolDetail: View {
             } else if tool.title == "Gamatoto" {
                 Section("Direct edit") {
                     Button("Max Gamatoto XP / finish expedition", systemImage: "hammer.fill") { store.applyNativeAction("max_gamatoto") }
+                        .disabled(!store.hasSave)
+                    Button("Max Ototo cannon levels", systemImage: "bolt.fill") { store.applyNativeAction("max_ototo_cannons") }
                         .disabled(!store.hasSave)
                 }
             } else if tool.title == "Account" {
