@@ -2,7 +2,7 @@ import SwiftUI
 
 struct CLITerminalView: View {
     @EnvironmentObject private var store: SaveStore
-    @State private var output = "BCEditor engine sẵn sàng. Mở save rồi nhấn Bắt đầu để dùng toàn bộ menu CLI.\n"
+    @State private var output = "BCEditor Full Editor sẵn sàng. Nhấn Bắt đầu để mở toàn bộ chức năng chỉnh sửa.\n"
     @State private var input = ""
     @State private var running = false
     @State private var timer: Timer?
@@ -16,11 +16,11 @@ struct CLITerminalView: View {
                         .onChange(of: output) { _, _ in withAnimation { proxy.scrollTo("output", anchor: .bottom) } }
                 }
                 HStack {
-                    TextField("Nhập lựa chọn CLI…", text: $input).textFieldStyle(.roundedBorder).disabled(!running).onSubmit { submit() }
+                    TextField("Nhập lựa chọn…", text: $input).textFieldStyle(.roundedBorder).disabled(!running).onSubmit { submit() }
                     Button(action: submit) { Image(systemName: "arrow.up.circle.fill").font(.title2) }.disabled(!running || input.isEmpty)
                 }.padding()
             }
-            .navigationTitle("Full CLI engine")
+            .navigationTitle("Full Editor")
             .toolbar { ToolbarItem(placement: .topBarTrailing) { Button(running ? "Đang chạy" : "Bắt đầu", systemImage: running ? "hourglass" : "play.fill") { start() }.disabled(running || !store.hasSave) } }
         }
         .onDisappear { timer?.invalidate() }
