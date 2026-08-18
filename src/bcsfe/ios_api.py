@@ -51,6 +51,14 @@ def apply(path: str, action: str, value: int = 0) -> None:
             values = getattr(save, name, None)
             if isinstance(values, list):
                 setattr(save, name, [limit for _ in values])
+    elif action == "max_battle_items":
+        limit = core.core_data.max_value_manager.battle_items
+        for item in save.battle_items.items:
+            item.amount = limit
+            item.locked = False
+    elif action == "clear_all_maps":
+        for name in ("story", "event_stages", "ex_stages", "uncanny", "catamin_stages"):
+            if hasattr(save, name): _clear_progress(getattr(save, name))
     elif action == "unlock_aku_realm":
         for stage_id in (255, 256, 257, 258, 265, 266, 268):
             save.event_stages.clear_map(1, stage_id, 0, False)
@@ -107,6 +115,19 @@ def _set_field(save, field, value):
         setattr(save.gatya, field, value)
     else:
         setattr(save, field, value)
+
+def _clear_progress(obj, seen=None):
+    if seen is None: seen = set()
+    if id(obj) in seen or obj is None or isinstance(obj, (str, bytes, int, float, bool)): return
+    seen.add(id(obj))
+    if hasattr(obj, "clear_times"): obj.clear_times = max(1, int(getattr(obj, "clear_times", 0)))
+    if hasattr(obj, "clear_amount"): obj.clear_amount = max(1, int(getattr(obj, "clear_amount", 0)))
+    if isinstance(obj, dict):
+        for value in obj.values(): _clear_progress(value, seen)
+    elif isinstance(obj, (list, tuple)):
+        for value in obj: _clear_progress(value, seen)
+    elif hasattr(obj, "__dict__"):
+        for value in vars(obj).values(): _clear_progress(value, seen)
 
 
 def read_value(path: str, field: str) -> int:

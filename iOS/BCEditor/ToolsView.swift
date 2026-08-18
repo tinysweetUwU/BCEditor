@@ -137,6 +137,10 @@ struct ToolDetail: View {
                         store.applyNativeAction("max_resources")
                     }
                     .disabled(!store.hasSave)
+                    Button("Max Battle Items", systemImage: "shield.fill") {
+                        store.applyNativeAction("max_battle_items")
+                    }
+                    .disabled(!store.hasSave)
                 }
             } else if tool.title == "Cats & Skills" {
                 Section("Direct edit") {
@@ -167,6 +171,10 @@ struct ToolDetail: View {
                 Section("Direct edit") {
                     Button("Unlock Aku Realm", systemImage: "lock.open.fill") {
                         store.applyNativeAction("unlock_aku_realm")
+                    }
+                    .disabled(!store.hasSave)
+                    Button("Clear all available stages", systemImage: "map.fill") {
+                        store.applyNativeAction("clear_all_maps")
                     }
                     .disabled(!store.hasSave)
                 }
