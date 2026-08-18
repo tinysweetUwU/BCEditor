@@ -34,16 +34,6 @@ struct HomeView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Label("BCEditor", systemImage: "wand.and.stars.inverse")
-                            .font(.system(size: 34, weight: .bold, design: .rounded))
-                        Text("Trình chỉnh sửa save native cho iPhone và iPad")
-                            .foregroundStyle(.secondary)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading).padding(22)
-                    .background(.orange.gradient, in: RoundedRectangle(cornerRadius: 28))
-                    .foregroundStyle(.white)
-
                     if let save = store.summary {
                         SaveCard(save: save)
                     } else {
