@@ -43,6 +43,7 @@ jobs:
           rm -rf "$EXPORT_PATH"
           mkdir -p "$EXPORT_PATH/Payload"
           cp -R "$ARCHIVE_PATH/Products/Applications/BCEditor.app" "$EXPORT_PATH/Payload/BCEditor.app"
+          rm -rf "$EXPORT_PATH/Payload/BCEditor.app/_CodeSignature"
           test -f "$EXPORT_PATH/Payload/BCEditor.app/Info.plist"
           plutil -lint "$EXPORT_PATH/Payload/BCEditor.app/Info.plist"
           # An IPA is a ZIP whose root contains exactly one Payload directory.
