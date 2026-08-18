@@ -147,6 +147,16 @@ struct ToolDetail: View {
                     }
                     .disabled(!store.hasSave)
                 }
+            } else if tool.title == "Gamatoto" {
+                Section("Direct edit") {
+                    Button("Max Gamatoto XP / finish expedition", systemImage: "hammer.fill") { store.applyNativeAction("max_gamatoto") }
+                        .disabled(!store.hasSave)
+                }
+            } else if tool.title == "Account" {
+                Section("Direct edit") {
+                    Button("Unlock equipment menu", systemImage: "lock.open.fill") { store.applyNativeAction("unlock_equip_menu") }
+                        .disabled(!store.hasSave)
+                }
             } else if tool.title == "Fixes" {
                 Section("Direct fixes") {
                     Button("Fix Gamatoto crash", systemImage: "wrench.and.screwdriver") { store.applyNativeAction("fix_gamatoto_crash") }

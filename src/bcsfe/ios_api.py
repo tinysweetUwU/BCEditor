@@ -41,6 +41,14 @@ def apply(path: str, action: str, value: int = 0) -> None:
         save.date_3 = now
         save.timestamp = now.timestamp()
         save.energy_penalty_timestamp = now.timestamp()
+    elif action == "max_gamatoto":
+        save.gamatoto.xp = 2_000_000_000
+        save.gamatoto.remaining_seconds = 0
+        save.gamatoto.return_flag = True
+    elif action == "unlock_equip_menu":
+        save.unlock_equip_menu()
+    elif action == "reset_officer_pass":
+        save.officer_pass.reset(save)
 
     save.to_data().to_file(save_path)
 
