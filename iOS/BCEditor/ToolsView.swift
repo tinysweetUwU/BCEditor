@@ -57,7 +57,7 @@ struct ToolsView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
+                LazyVStack(spacing: 14) {
                     ForEach(tools) { tool in
                         NavigationLink {
                             ToolDetail(tool: tool)
