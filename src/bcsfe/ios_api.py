@@ -54,7 +54,17 @@ def apply(path: str, action: str, value: int = 0) -> None:
 
 
 _SCALARS = ("catfood", "xp", "normal_tickets", "rare_tickets", "platinum_tickets",
-            "legend_tickets", "platinum_shards", "np", "leadership")
+            "legend_tickets", "platinum_shards", "np", "leadership",
+            "rare_seed", "normal_seed", "event_seed")
+
+def _get_field(save, field):
+    return getattr(save.gatya, field) if field.endswith("_seed") else getattr(save, field)
+
+def _set_field(save, field, value):
+    if field.endswith("_seed"):
+        setattr(save.gatya, field, value)
+    else:
+        setattr(save, field, value)
 
 
 def read_value(path: str, field: str) -> int:
@@ -62,7 +72,7 @@ def read_value(path: str, field: str) -> int:
     save = core.SaveFile(core.Path(path).read())
     if field not in _SCALARS:
         raise ValueError(field)
-    return int(getattr(save, field, 0))
+    return int(_get_field(save, field))
 
 
 def write_value(path: str, field: str, value: int) -> None:
@@ -71,5 +81,5 @@ def write_value(path: str, field: str, value: int) -> None:
         raise ValueError(field)
     save_path = core.Path(path)
     save = core.SaveFile(save_path.read())
-    setattr(save, field, max(0, int(value)))
+    _set_field(save, field, max(0, int(value)))
     save.to_data().to_file(save_path)

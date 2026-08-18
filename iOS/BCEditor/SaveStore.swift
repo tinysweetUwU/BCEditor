@@ -84,7 +84,7 @@ final class SaveStore: ObservableObject {
     }
 
     private func loadBasicValues(from url: URL) {
-        let fields = ["catfood", "xp", "normal_tickets", "rare_tickets", "platinum_tickets", "platinum_shards", "np", "leadership"]
+        let fields = ["catfood", "xp", "normal_tickets", "rare_tickets", "platinum_tickets", "platinum_shards", "np", "leadership", "rare_seed", "normal_seed", "event_seed"]
         let path = url.path
         DispatchQueue.global(qos: .userInitiated).async {
             var values: [String: Int] = [:]

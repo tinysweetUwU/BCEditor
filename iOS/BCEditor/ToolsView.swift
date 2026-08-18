@@ -110,6 +110,9 @@ struct ToolDetail: View {
     @State private var platinumShards = ""
     @State private var np = ""
     @State private var leadership = ""
+    @State private var rareSeed = ""
+    @State private var normalSeed = ""
+    @State private var eventSeed = ""
     @State private var showingEditor = false
 
     var body: some View {
@@ -156,6 +159,12 @@ struct ToolDetail: View {
                 Section("Direct edit") {
                     Button("Unlock equipment menu", systemImage: "lock.open.fill") { store.applyNativeAction("unlock_equip_menu") }
                         .disabled(!store.hasSave)
+                }
+            } else if tool.title == "Gatya & Other" {
+                Section("Direct edit") {
+                    directField("Rare Gatya Seed", text: $rareSeed, field: "rare_seed")
+                    directField("Normal Gatya Seed", text: $normalSeed, field: "normal_seed")
+                    directField("Event Gatya Seed", text: $eventSeed, field: "event_seed")
                 }
             } else if tool.title == "Fixes" {
                 Section("Direct fixes") {
@@ -222,6 +231,9 @@ struct ToolDetail: View {
         platinumShards = store.basicValues["platinum_shards"].map { String($0) } ?? ""
         np = store.basicValues["np"].map { String($0) } ?? ""
         leadership = store.basicValues["leadership"].map { String($0) } ?? ""
+        rareSeed = store.basicValues["rare_seed"].map { String($0) } ?? ""
+        normalSeed = store.basicValues["normal_seed"].map { String($0) } ?? ""
+        eventSeed = store.basicValues["event_seed"].map { String($0) } ?? ""
     }
 }
 
