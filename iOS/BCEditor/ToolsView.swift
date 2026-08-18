@@ -131,6 +131,10 @@ struct ToolDetail: View {
                         store.applyNativeAction("max_items")
                     }
                     .disabled(!store.hasSave)
+                    Button("Max Catfruit, Catseyes and Catamins", systemImage: "leaf.fill") {
+                        store.applyNativeAction("max_resources")
+                    }
+                    .disabled(!store.hasSave)
                 }
             } else if tool.title == "Cats & Skills" {
                 Section("Direct edit") {

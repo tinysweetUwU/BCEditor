@@ -28,6 +28,12 @@ def apply(path: str, action: str, value: int = 0) -> None:
         for name in ("catfood", "xp", "normal_tickets", "rare_tickets", "platinum_tickets", "np", "leadership"):
             if hasattr(save, name) and hasattr(manager, name):
                 setattr(save, name, getattr(manager, name))
+    elif action == "max_resources":
+        manager = core.core_data.max_value_manager
+        for name, limit in (("catfruit", manager.catfruit_new), ("catseyes", manager.catseyes), ("catamins", manager.catamins)):
+            values = getattr(save, name, None)
+            if isinstance(values, list):
+                setattr(save, name, [limit for _ in values])
     elif action == "unlock_aku_realm":
         for stage_id in (255, 256, 257, 258, 265, 266, 268):
             save.event_stages.clear_map(1, stage_id, 0, False)
