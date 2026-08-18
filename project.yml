@@ -9,7 +9,8 @@ settings:
     PRODUCT_BUNDLE_IDENTIFIER: com.bceditor.saveeditor
     MARKETING_VERSION: 1.0.0
     CURRENT_PROJECT_VERSION: 1
-    GENERATE_INFOPLIST_FILE: YES
+    GENERATE_INFOPLIST_FILE: NO
+    INFOPLIST_FILE: iOS/BCEditor/Info.plist
 targets:
   BCEditor:
     type: application
@@ -25,13 +26,7 @@ targets:
     settings:
       base:
         PRODUCT_NAME: BCEditor
-        INFOPLIST_KEY_CFBundleDisplayName: BCEditor
-        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.utilities
-        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
         TARGETED_DEVICE_FAMILY: "1"
-        INFOPLIST_KEY_UIFileSharingEnabled: YES
-        INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace: YES
-        INFOPLIST_KEY_UIRequiresFullScreen: YES
         SWIFT_OBJC_BRIDGING_HEADER: iOS/BCEditor/PythonBridge.h
     scheme:
       testTargets: []

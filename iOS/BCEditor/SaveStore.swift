@@ -115,7 +115,10 @@ final class SaveStore: ObservableObject {
             let offset = version >= 10 || region != .jp ? 7 : 6
             return SaveSummary(region: region, gameVersion: version, catFood: readInt(data, at: offset))
         }
-        return nil
+        let version = readInt(data, at: 0)
+        guard version > 0 else { return nil }
+        let offset = version >= 10 ? 7 : 6
+        return SaveSummary(region: .en, gameVersion: version, catFood: readInt(data, at: offset))
     }
 
     private static func validHash(_ data: Data, region: SaveRegion) -> Bool {
