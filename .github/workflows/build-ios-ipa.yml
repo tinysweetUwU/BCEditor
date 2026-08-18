@@ -45,6 +45,7 @@ jobs:
           cp -R "$ARCHIVE_PATH/Products/Applications/BCEditor.app" "$EXPORT_PATH/Payload/BCEditor.app"
           test -f "$EXPORT_PATH/Payload/BCEditor.app/Info.plist"
           plutil -lint "$EXPORT_PATH/Payload/BCEditor.app/Info.plist"
+          # An IPA is a ZIP whose root contains exactly one Payload directory.
           (cd "$EXPORT_PATH" && /usr/bin/zip -qry -X ../BCEditor-unsigned.ipa Payload)
           unzip -t build/BCEditor-unsigned.ipa
       - name: Upload build diagnostics
