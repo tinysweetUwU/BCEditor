@@ -106,6 +106,9 @@ struct ToolDetail: View {
     @State private var normalTickets = ""
     @State private var rareTickets = ""
     @State private var platinumTickets = ""
+    @State private var platinumShards = ""
+    @State private var np = ""
+    @State private var leadership = ""
     @State private var showingEditor = false
 
     var body: some View {
@@ -117,6 +120,9 @@ struct ToolDetail: View {
                     directField("Normal Tickets", text: $normalTickets, field: "normal_tickets")
                     directField("Rare Tickets", text: $rareTickets, field: "rare_tickets")
                     directField("Platinum Tickets", text: $platinumTickets, field: "platinum_tickets")
+                    directField("Platinum Shards", text: $platinumShards, field: "platinum_shards")
+                    directField("NP", text: $np, field: "np")
+                    directField("Leadership", text: $leadership, field: "leadership")
                 }
             } else {
                 Section("Editor") {
