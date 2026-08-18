@@ -40,9 +40,14 @@ jobs:
           mkdir -p build
           set -o pipefail
           xcodebuild archive -project BCEditor.xcodeproj -scheme "$SCHEME" -configuration Release -archivePath "$ARCHIVE_PATH" -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO AD_HOC_CODE_SIGNING_ALLOWED=NO 2>&1 | tee build/xcodebuild.log
+          rm -rf "$EXPORT_PATH"
           mkdir -p "$EXPORT_PATH/Payload"
-          cp -R "$ARCHIVE_PATH/Products/Applications/BCEditor.app" "$EXPORT_PATH/Payload/"
-          (cd "$EXPORT_PATH" && zip -qry ../BCEditor-unsigned.ipa Payload)
+          ditto "$ARCHIVE_PATH/Products/Applications/BCEditor.app" "$EXPORT_PATH/Payload/BCEditor.app"
+          test -f "$EXPORT_PATH/Payload/BCEditor.app/Info.plist"
+          test -x "$EXPORT_PATH/Payload/BCEditor.app/BCEditor"
+          plutil -lint "$EXPORT_PATH/Payload/BCEditor.app/Info.plist"
+          ditto -c -k --sequesterRsrc --keepParent "$EXPORT_PATH/Payload" build/BCEditor-unsigned.ipa
+          unzip -t build/BCEditor-unsigned.ipa
       - name: Upload build diagnostics
         if: ${{ failure() }}
         run: |
