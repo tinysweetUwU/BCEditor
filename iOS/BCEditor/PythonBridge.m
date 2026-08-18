@@ -68,5 +68,6 @@ void BCEPythonStart(NSString *savePath) {
 }
 
 void BCEPythonSubmitInput(NSString *line) { [bceCondition lock]; [bceInputs addObject:line]; [bceCondition signal]; [bceCondition unlock]; }
+void BCEPythonQueueInput(NSString *line) { [bceCondition lock]; [bceInputs addObject:line]; [bceCondition broadcast]; [bceCondition unlock]; }
 NSString *BCEPythonDrainOutput(void) { [bceCondition lock]; NSString *value = [bceOutput copy]; [bceOutput setString:@""]; [bceCondition unlock]; return value; }
 BOOL BCEPythonIsRunning(void) { [bceCondition lock]; BOOL value = bceRunning; [bceCondition unlock]; return value; }

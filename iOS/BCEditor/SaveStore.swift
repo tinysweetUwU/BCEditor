@@ -81,6 +81,30 @@ final class SaveStore: ObservableObject {
         self.summary = summary; backup(); message = "Đã cập nhật Cat Food và kiểm tra lại checksum."
     }
 
+    // Native Tools calls this method directly; the parser is hidden behind the form.
+    func updateBasicItem(_ field: String, value: Int) {
+        guard let url = exportSave() else { return }
+        let indexes = ["catfood": 1, "xp": 2, "normal_tickets": 3, "rare_tickets": 4,
+                       "platinum_tickets": 6, "legend_tickets": 7, "platinum_shards": 8,
+                       "np": 9, "leadership": 10, "battle_items": 11, "catseyes": 13,
+                       "catfruit": 14, "catamins": 15]
+        guard let index = indexes[field] else { return }
+        BCEPythonStart(url.path)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            BCEPythonQueueInput("2")
+            BCEPythonQueueInput(String(index))
+            if ["catfood", "rare_tickets", "platinum_tickets", "legend_tickets"].contains(field) {
+                BCEPythonQueueInput("1")
+            }
+            BCEPythonQueueInput(String(max(0, value)))
+            BCEPythonQueueInput("11")
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 4.0) {
+            self.importPythonSaveIfPresent()
+            self.message = "Đã cập nhật (field). Hãy xuất SAVE_DATA để lưu bản chỉnh sửa."
+        }
+    }
+
     func exportSave() -> URL? {
         guard hasSave else { return nil }
         let url = documentsDirectory.appendingPathComponent("Exports", isDirectory: true).appendingPathComponent("SAVE_DATA")

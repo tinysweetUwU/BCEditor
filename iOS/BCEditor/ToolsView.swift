@@ -102,20 +102,21 @@ struct ToolDetail: View {
     @EnvironmentObject private var store: SaveStore
     let tool: EditorTool
     @State private var catFood = ""
+    @State private var xp = ""
+    @State private var normalTickets = ""
+    @State private var rareTickets = ""
+    @State private var platinumTickets = ""
     @State private var showingEditor = false
 
     var body: some View {
         Form {
             if tool.title == "Items" {
                 Section("Direct edit") {
-                    TextField("Cat Food", text: $catFood)
-                        .keyboardType(.numberPad)
-                    Button("Apply Cat Food") {
-                        if let value = Int(catFood) {
-                            store.updateCatFood(value)
-                        }
-                    }
-                    .disabled(!store.hasSave)
+                    directField("Cat Food", text: $catFood, field: "catfood")
+                    directField("XP", text: $xp, field: "xp")
+                    directField("Normal Tickets", text: $normalTickets, field: "normal_tickets")
+                    directField("Rare Tickets", text: $rareTickets, field: "rare_tickets")
+                    directField("Platinum Tickets", text: $platinumTickets, field: "platinum_tickets")
                 }
             } else {
                 Section("Editor") {
@@ -149,6 +150,17 @@ struct ToolDetail: View {
             Button("OK", role: .cancel) { }
         } message: {
             Text("Mục Cat Food đã chỉnh sửa trực tiếp. Các nhóm còn lại sẽ dùng cùng bộ máy chỉnh sửa trong bản cập nhật tiếp theo.")
+        }
+    }
+
+    @ViewBuilder
+    private func directField(_ title: String, text: Binding<String>, field: String) -> some View {
+        HStack {
+            TextField(title, text: text).keyboardType(.numberPad)
+            Button("Apply") {
+                if let value = Int(text.wrappedValue) { store.updateBasicItem(field, value: value) }
+            }
+            .disabled(!store.hasSave || Int(text.wrappedValue) == nil)
         }
     }
 }
