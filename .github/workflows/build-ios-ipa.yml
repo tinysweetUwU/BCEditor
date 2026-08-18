@@ -1,0 +1,49 @@
+name: Build iOS IPA
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'iOS/**'
+      - 'project.yml'
+      - '.github/workflows/build-ios-ipa.yml'
+
+jobs:
+  build:
+    runs-on: macos-latest
+    env:
+      SCHEME: BCEditor
+      ARCHIVE_PATH: ${{ github.workspace }}/build/BCEditor.xcarchive
+      EXPORT_PATH: ${{ github.workspace }}/build/export
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Download embedded Python for iOS
+        run: |
+          mkdir -p Vendor iOS/PythonRuntime
+          ASSET_URL=$(curl -fsSL https://api.github.com/repos/beeware/Python-Apple-support/releases/latest | jq -r '.assets[] | select((.name | ascii_downcase | contains("ios")) and (.name | endswith(".tar.gz"))) | .browser_download_url' | head -n 1)
+          test -n "$ASSET_URL"
+          curl -fsSL "$ASSET_URL" -o "$RUNNER_TEMP/python-ios.tar.gz"
+          tar -xzf "$RUNNER_TEMP/python-ios.tar.gz" -C Vendor
+          PYTHON_XCFRAMEWORK=$(find Vendor -type d -name 'Python.xcframework' -print -quit)
+          test -n "$PYTHON_XCFRAMEWORK"
+          cp -R "$PYTHON_XCFRAMEWORK" Vendor/Python.xcframework
+      - name: Vendor Python dependencies
+        run: |
+          python3 -m pip install --target iOS/PythonRuntime/vendor --no-compile PyJWT==2.13.0 requests==2.34.2 PyYAML==6.0.3
+      - name: Generate Xcode project
+        run: xcodegen generate
+      - name: Archive unsigned app
+        run: |
+          xcodebuild archive -project BCEditor.xcodeproj -scheme "$SCHEME" -configuration Release -archivePath "$ARCHIVE_PATH" -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO
+          mkdir -p "$EXPORT_PATH/Payload"
+          cp -R "$ARCHIVE_PATH/Products/Applications/BCEditor.app" "$EXPORT_PATH/Payload/"
+          (cd "$EXPORT_PATH" && zip -qry ../BCEditor-unsigned.ipa Payload)
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: BCEditor-IPA
+          path: build/**/*.ipa
+          if-no-files-found: error
