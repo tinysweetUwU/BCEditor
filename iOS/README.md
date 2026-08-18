@@ -1,6 +1,6 @@
 # BCEditor for iOS
 
-Ứng dụng SwiftUI native. Toàn bộ package `src/bcsfe` và thư mục `files` của bản gốc được đóng gói vào app; tab **CLI** chạy engine Python nguyên bản trong sandbox iOS và thay `input()` bằng ô nhập SwiftUI. Vì vậy các menu/edit handler của CLI vẫn giữ nguyên hành vi và dữ liệu save, trong khi các chức năng ADB/root không áp dụng trên iOS.
+Ứng dụng SwiftUI native. Toàn bộ package `src/bcsfe` và thư mục `files` của bản gốc được đóng gói vào app. Các thao tác chỉnh sửa được gọi qua lớp API không tương tác từ các form trong tab Tools; các chức năng ADB/root không áp dụng trên iOS.
 
 ## Build IPA trên GitHub Actions
 

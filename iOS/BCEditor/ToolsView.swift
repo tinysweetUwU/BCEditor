@@ -280,7 +280,7 @@ struct SettingsView: View {
         NavigationStack {
             List {
                 Section("Application") {
-                    LabeledContent("Version", value: "1.0.0")
+                    LabeledContent("Version", value: "1.0.1")
                 }
                 Section("Author") {
                     HStack(spacing: 14) {

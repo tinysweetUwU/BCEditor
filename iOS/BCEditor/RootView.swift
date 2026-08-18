@@ -7,32 +7,19 @@ struct RootView: View {
 
     var body: some View {
         TabView {
-                HomeView()
-                    .tabItem { Label("Home", systemImage: "house.fill") }
-                ToolsView()
-                    .tabItem { Label("Tools", systemImage: "wrench.and.screwdriver.fill") }
-                SaveView(openImporter: { importing = true })
-                    .tabItem { Label("Save", systemImage: "externaldrive.fill") }
-                SettingsView()
-                    .tabItem { Label("Cài đặt", systemImage: "gearshape.fill") }
+            HomeView().tabItem { Label("Home", systemImage: "house.fill") }
+            ToolsView().tabItem { Label("Tools", systemImage: "wrench.and.screwdriver.fill") }
+            SaveView(openImporter: { importing = true }).tabItem { Label("Save", systemImage: "externaldrive.fill") }
+            SettingsView().tabItem { Label("Cài đặt", systemImage: "gearshape.fill") }
         }
         .tint(.orange)
-        .task {
-            store.prepareFilesDirectories()
-            store.importPendingSave()
-        }
-        // SAVE_DATA has no extension, so .data can be filtered out by Files on iOS.
+        .task { store.prepareFilesDirectories(); store.importPendingSave() }
         .fileImporter(isPresented: $importing, allowedContentTypes: [.item], allowsMultipleSelection: false) { result in
             if case let .success(urls) = result, let url = urls.first { store.importSave(from: url) }
         }
-        .alert("BCEditor", isPresented: Binding(
-            get: { store.message != nil },
-            set: { if !$0 { store.message = nil } }
-        )) {
+        .alert("BCEditor", isPresented: Binding(get: { store.message != nil }, set: { if !$0 { store.message = nil } })) {
             Button("OK", role: .cancel) { store.message = nil }
-        } message: {
-            Text(store.message ?? "")
-        }
+        } message: { Text(store.message ?? "") }
     }
 }
 
@@ -45,13 +32,12 @@ struct HomeView: View {
                     if let save = store.summary {
                         SaveCard(save: save)
                     } else {
-                        ContentUnavailableView("Chưa có save", systemImage: "tray.and.arrow.down", description: Text("Mở SAVE_DATA để bắt đầu chỉnh sửa."))
+                        ContentUnavailableView("Chưa có save", systemImage: "tray.and.arrow.down", description: Text("Vào tab Save để nhập SAVE_DATA."))
                     }
-                    Text("Mỗi lần mở hoặc sửa, ứng dụng tự tạo bản sao lưu trong Files › Trên iPhone của tôi › BCEditor › Backups.")
+                    Text("Bản sao lưu được lưu trong Files → Trên iPhone của tôi → BCEditor → Backups.")
                         .font(.footnote).foregroundStyle(.secondary)
                 }.padding()
             }.navigationTitle("Home")
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 }
@@ -65,7 +51,9 @@ struct SaveCard: View {
             Divider(); stat("Cat Food", save.catFood.formatted())
         }.padding(18).background(.thinMaterial, in: RoundedRectangle(cornerRadius: 20))
     }
-    private func stat(_ title: String, _ value: String) -> some View { VStack(alignment: .leading) { Text(title).font(.caption).foregroundStyle(.secondary); Text(value).font(.title3.weight(.semibold)) } }
+    private func stat(_ title: String, _ value: String) -> some View {
+        VStack(alignment: .leading) { Text(title).font(.caption).foregroundStyle(.secondary); Text(value).font(.title3.weight(.semibold)) }
+    }
 }
 
 struct SaveView: View {
@@ -76,23 +64,21 @@ struct SaveView: View {
     var body: some View {
         NavigationStack {
             List {
-                Section("On My iPhone") {
+                Section("Trên iPhone của tôi") {
                     Label("BCEditor / Import", systemImage: "folder.fill")
-                    Text("Chép SAVE_DATA vào thư mục này trong Files; app sẽ tự nạp khi mở lại.")
-                        .font(.footnote).foregroundStyle(.secondary)
-                    Button("Quét lại thư mục Import", systemImage: "arrow.clockwise") {
-                        store.importPendingSave()
-                    }
+                    Text("Chép SAVE_DATA vào thư mục này trong Files; app sẽ tự nạp khi mở lại.").font(.footnote).foregroundStyle(.secondary)
+                    Button("Quét lại thư mục Import", systemImage: "arrow.clockwise") { store.importPendingSave() }
                 }
-                Section("File hiện tại") { LabeledContent("Tên file", value: store.fileName); if let s = store.summary { LabeledContent("Kiểm tra", value: "Checksum hợp lệ · \(s.region.rawValue.uppercased())") } }
+                Section("File hiện tại") {
+                    LabeledContent("Tên file", value: store.fileName)
+                    if let summary = store.summary { LabeledContent("Khu vực", value: summary.region.rawValue.uppercased()) }
+                }
                 Section("Quản lý") {
                     Button("Nhập SAVE_DATA", systemImage: "square.and.arrow.down", action: openImporter)
                     Button("Xuất SAVE_DATA", systemImage: "square.and.arrow.up") { exportURL = store.exportSave(); exporting = exportURL != nil }.disabled(!store.hasSave)
                 }
-                Section("Lưu ý") { Text("Chỉ nhập file save của chính bạn. Việc sử dụng save đã chỉnh sửa có thể vi phạm điều khoản của trò chơi.").font(.footnote) }
             }.navigationTitle("Save")
-        }
-        .sheet(isPresented: $exporting) { if let exportURL { ShareSheet(items: [exportURL]) } }
+        }.sheet(isPresented: $exporting) { if let exportURL { ShareSheet(items: [exportURL]) } }
     }
 }
 
