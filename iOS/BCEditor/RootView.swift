@@ -6,23 +6,33 @@ struct RootView: View {
     @State private var importing = false
 
     var body: some View {
-        TabView {
-            HomeView(openImporter: { importing = true })
-                .tabItem { Label("Home", systemImage: "house.fill") }
-            ToolsView()
-                .tabItem { Label("Tools", systemImage: "toolbox.fill") }
-            SaveView(openImporter: { importing = true })
-                .tabItem { Label("Save", systemImage: "externaldrive.fill") }
-            CLITerminalView()
-                .tabItem { Label("CLI", systemImage: "terminal.fill") }
-            SettingsView()
-                .tabItem { Label("Cài đặt", systemImage: "gearshape.fill") }
+        GeometryReader { proxy in
+            TabView {
+                HomeView(openImporter: { importing = true })
+                    .tabItem { Label("Home", systemImage: "house.fill") }
+                ToolsView()
+                    .tabItem { Label("Tools", systemImage: "wrench.and.screwdriver.fill") }
+                SaveView(openImporter: { importing = true })
+                    .tabItem { Label("Save", systemImage: "externaldrive.fill") }
+                CLITerminalView()
+                    .tabItem { Label("CLI", systemImage: "terminal.fill") }
+                SettingsView()
+                    .tabItem { Label("Cài đặt", systemImage: "gearshape.fill") }
+            }
+            .frame(width: proxy.size.width, height: proxy.size.height)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .tint(.orange)
         // SAVE_DATA has no extension, so .data can be filtered out by Files on iOS.
         .fileImporter(isPresented: $importing, allowedContentTypes: [.item], allowsMultipleSelection: false) { result in
             if case let .success(urls) = result, let url = urls.first { store.importSave(from: url) }
+        }
+        .alert("BCEditor", isPresented: Binding(
+            get: { store.message != nil },
+            set: { if !$0 { store.message = nil } }
+        )) {
+            Button("OK", role: .cancel) { store.message = nil }
+        } message: {
+            Text(store.message ?? "")
         }
     }
 }
@@ -39,8 +49,6 @@ struct HomeView: View {
                     } else {
                         ContentUnavailableView("Chưa có save", systemImage: "tray.and.arrow.down", description: Text("Mở SAVE_DATA để bắt đầu chỉnh sửa."))
                     }
-                    Button(action: openImporter) { Label("Mở SAVE_DATA", systemImage: "folder.badge.plus") }
-                        .buttonStyle(.borderedProminent).controlSize(.large)
                     Text("Mỗi lần mở hoặc sửa, ứng dụng tự tạo bản sao lưu trong Files › Trên iPhone của tôi › BCEditor › Backups.")
                         .font(.footnote).foregroundStyle(.secondary)
                 }.padding()
