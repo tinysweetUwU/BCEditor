@@ -7,7 +7,6 @@ struct RootView: View {
 
     var body: some View {
         TabView {
-            TabView {
                 HomeView()
                     .tabItem { Label("Home", systemImage: "house.fill") }
                 ToolsView()
@@ -16,7 +15,6 @@ struct RootView: View {
                     .tabItem { Label("Save", systemImage: "externaldrive.fill") }
                 SettingsView()
                     .tabItem { Label("Cài đặt", systemImage: "gearshape.fill") }
-            }
         }
         .tint(.orange)
         .task {
