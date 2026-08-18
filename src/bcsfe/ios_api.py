@@ -79,6 +79,13 @@ def apply(path: str, action: str, value: int = 0) -> None:
             values = getattr(save, name, None)
             if isinstance(values, list):
                 setattr(save, name, [limit for _ in values])
+    elif action == "max_misc_resources":
+        manager = core.core_data.max_value_manager
+        for name, fallback in (("treasure_chests", 9999), ("labyrinth_medals", 9999), ("lucky_tickets", 9999)):
+            values = getattr(save, name, None)
+            if isinstance(values, list):
+                limit = getattr(manager, name, fallback)
+                setattr(save, name, [limit for _ in values])
     elif action == "max_battle_items":
         limit = core.core_data.max_value_manager.battle_items
         for item in save.battle_items.items:
@@ -96,6 +103,14 @@ def apply(path: str, action: str, value: int = 0) -> None:
         names = ("catfruit", "catseyes", "catamins")
         if resource < len(names):
             values = getattr(save, names[resource], None)
+            if isinstance(values, list) and 0 <= index < len(values):
+                values[index] = amount
+    elif action == "set_event_ticket":
+        packed = int(value)
+        kind, index, amount = packed & 0xFF, (packed >> 8) & 0xFF, (packed >> 16) & 0xFFFFFFFF
+        names = ("event_capsules", "lucky_tickets", "event_capsules_2")
+        if kind < len(names):
+            values = getattr(save, names[kind], None)
             if isinstance(values, list) and 0 <= index < len(values):
                 values[index] = amount
     elif action == "clear_all_maps":
