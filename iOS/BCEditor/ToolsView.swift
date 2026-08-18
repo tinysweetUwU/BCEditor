@@ -165,6 +165,10 @@ struct ToolDetail: View {
                     directField("Rare Gatya Seed", text: $rareSeed, field: "rare_seed")
                     directField("Normal Gatya Seed", text: $normalSeed, field: "normal_seed")
                     directField("Event Gatya Seed", text: $eventSeed, field: "event_seed")
+                    Button("Complete all missions", systemImage: "checkmark.seal.fill") { store.applyNativeAction("complete_missions") }
+                        .disabled(!store.hasSave)
+                    Button("Unlock medals", systemImage: "rosette") { store.applyNativeAction("unlock_medals") }
+                        .disabled(!store.hasSave)
                 }
             } else if tool.title == "Fixes" {
                 Section("Direct fixes") {

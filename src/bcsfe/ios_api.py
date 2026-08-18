@@ -49,6 +49,19 @@ def apply(path: str, action: str, value: int = 0) -> None:
         save.unlock_equip_menu()
     elif action == "reset_officer_pass":
         save.officer_pass.reset(save)
+    elif action == "complete_missions":
+        conditions = core.core_data.get_mission_conditions(save)
+        for mission_id in list(save.missions.clear_states):
+            save.missions.clear_states[mission_id] = 2
+            condition = conditions.get_condition(mission_id) if conditions else None
+            if condition:
+                save.missions.requirements[mission_id] = condition.progress_count
+    elif action == "unlock_medals":
+        names = core.core_data.get_medal_names(save)
+        if names and names.medal_names:
+            for medal_id, medal in enumerate(names.medal_names):
+                if medal:
+                    save.medals.add_medal(medal_id)
 
     save.to_data().to_file(save_path)
 
