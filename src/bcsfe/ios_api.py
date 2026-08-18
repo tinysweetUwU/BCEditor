@@ -22,6 +22,11 @@ def apply(path: str, action: str, value: int = 0) -> None:
                 cat.unlock(save)
                 for talent in cat.talents:
                     talent.level = max(talent.level, 10)
+    elif action == "max_special_skills":
+        for skill in save.special_skills.skills:
+            skill.seen = 1
+            skill.upgrade.base = max(skill.upgrade.base, 10)
+            skill.upgrade.plus = max(skill.upgrade.plus, 20)
     elif action == "fill_cat_storage":
         for item in save.cats.storage_items:
             item.item_type = 0
