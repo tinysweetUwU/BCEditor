@@ -34,6 +34,7 @@ struct ToolsView: View {
             .navigationDestination(for: EditorTool.self) { tool in
                 ToolDetail(tool: tool)
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 }
@@ -106,13 +107,37 @@ struct SettingsView: View {
             List {
                 Section("Application") {
                     LabeledContent("Version", value: "1.0.0")
-                    Label("Native iOS interface", systemImage: "iphone")
+                }
+                Section("Author") {
+                    HStack(spacing: 14) {
+                        AsyncImage(url: URL(string: "https://github.com/tinysweetUwU.png?size=160")) { phase in
+                            if let image = phase.image {
+                                image.resizable().scaledToFill()
+                            } else {
+                                Image(systemName: "person.crop.circle.fill")
+                                    .resizable().scaledToFit().foregroundStyle(.secondary)
+                            }
+                        }
+                        .frame(width: 56, height: 56)
+                        .clipShape(Circle())
+
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text("tinysweet").font(.headline)
+                            Text("BCEditor creator").font(.caption).foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right").foregroundStyle(.tertiary)
+                    }
+                    Link(destination: URL(string: "https://github.com/tinysweetUwU/BCEditor")!) {
+                        Label("Open GitHub repository", systemImage: "link")
+                    }
                 }
                 Section("Safety") {
                     Text("BCEditor checks the save checksum and creates a backup before changes.")
                 }
             }
             .navigationTitle("Settings")
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 }

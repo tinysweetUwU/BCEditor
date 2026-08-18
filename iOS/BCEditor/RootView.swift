@@ -10,7 +10,7 @@ struct RootView: View {
             HomeView(openImporter: { importing = true })
                 .tabItem { Label("Home", systemImage: "house.fill") }
             ToolsView()
-                .tabItem { Label("Tools", systemImage: "square.grid.2x2.fill") }
+                .tabItem { Label("Tools", systemImage: "toolbox.fill") }
             SaveView(openImporter: { importing = true })
                 .tabItem { Label("Save", systemImage: "externaldrive.fill") }
             CLITerminalView()
@@ -18,6 +18,7 @@ struct RootView: View {
             SettingsView()
                 .tabItem { Label("Cài đặt", systemImage: "gearshape.fill") }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .tint(.orange)
         .fileImporter(isPresented: $importing, allowedContentTypes: [.data], allowsMultipleSelection: false) { result in
             if case let .success(urls) = result, let url = urls.first { store.importSave(from: url) }
@@ -53,6 +54,7 @@ struct HomeView: View {
                         .font(.footnote).foregroundStyle(.secondary)
                 }.padding()
             }.navigationTitle("Home")
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 }
