@@ -2,7 +2,16 @@
 from bcsfe import core
 
 
-def apply(path: str, action: str, value: int = 0) -> None:
+def apply(path: str, action: str, value: int = 0) -> bool:
+    """Apply one native edit without allowing a backend exception to escape."""
+    try:
+        _apply(path, action, value)
+        return True
+    except BaseException:
+        return False
+
+
+def _apply(path: str, action: str, value: int = 0) -> None:
     core.core_data.init_data()
     save_path = core.Path(path)
     save = core.SaveFile(save_path.read())

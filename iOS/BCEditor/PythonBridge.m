@@ -7,6 +7,7 @@ static NSMutableString *bceOutput;
 static BOOL bceRunning = NO;
 static NSString *bceSavePath;
 static dispatch_once_t bcePythonOnce;
+static NSRecursiveLock *bcePythonLock;
 PyMODINIT_FUNC PyInit_bcebridge(void);
 
 static void bceEnsurePython(void) {
@@ -14,6 +15,7 @@ static void bceEnsurePython(void) {
         bceCondition = [NSCondition new];
         bceInputs = [NSMutableArray new];
         bceOutput = [NSMutableString new];
+        bcePythonLock = [NSRecursiveLock new];
         PyImport_AppendInittab("bcebridge", &PyInit_bcebridge);
         Py_Initialize();
     });
@@ -76,14 +78,16 @@ void BCEPythonStart(NSString *savePath) {
 
 BOOL BCEPythonApplyAction(NSString *savePath, NSString *action, NSInteger value) {
     bceEnsurePython();
+    [bcePythonLock lock];
     PyGILState_STATE state = PyGILState_Ensure();
     NSString *sourcePackage = [NSBundle.mainBundle pathForResource:@"bcsfe" ofType:nil] ?: @"";
     NSString *source = sourcePackage.stringByDeletingLastPathComponent;
     NSString *vendor = [NSBundle.mainBundle pathForResource:@"vendor" ofType:nil inDirectory:@"PythonRuntime"] ?: @"";
     NSString *support = NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES).firstObject ?: NSTemporaryDirectory();
-    NSString *script = [NSString stringWithFormat:@"import sys; sys.path[:0]=[%@,%@]; from bcsfe.ios_api import apply; apply(%@,%@,%ld)", bceQuote(source), bceQuote(vendor), bceQuote(savePath), bceQuote(action), (long)value];
+    NSString *script = [NSString stringWithFormat:@"import sys; sys.path[:0]=[%@,%@]; from bcsfe.ios_api import apply; assert apply(%@,%@,%ld)", bceQuote(source), bceQuote(vendor), bceQuote(savePath), bceQuote(action), (long)value];
     int result = PyRun_SimpleString(script.UTF8String);
     PyGILState_Release(state);
+    [bcePythonLock unlock];
     return result == 0;
 }
 
@@ -102,6 +106,7 @@ static PyObject *bceAPIFunction(const char *name) {
 
 NSInteger BCEPythonReadValue(NSString *savePath, NSString *field) {
     bceEnsurePython();
+    [bcePythonLock lock];
     PyGILState_STATE state = PyGILState_Ensure();
     PyObject *function = bceAPIFunction("read_value");
     PyObject *args = Py_BuildValue("ss", savePath.UTF8String, field.UTF8String);
@@ -110,11 +115,13 @@ NSInteger BCEPythonReadValue(NSString *savePath, NSString *field) {
     if (!result) PyErr_Clear();
     Py_XDECREF(result); Py_XDECREF(args); Py_XDECREF(function);
     PyGILState_Release(state);
+    [bcePythonLock unlock];
     return value;
 }
 
 BOOL BCEPythonWriteValue(NSString *savePath, NSString *field, NSInteger value) {
     bceEnsurePython();
+    [bcePythonLock lock];
     PyGILState_STATE state = PyGILState_Ensure();
     PyObject *function = bceAPIFunction("write_value");
     PyObject *args = Py_BuildValue("ssi", savePath.UTF8String, field.UTF8String, (int)value);
@@ -123,6 +130,7 @@ BOOL BCEPythonWriteValue(NSString *savePath, NSString *field, NSInteger value) {
     if (!result) PyErr_Clear();
     Py_XDECREF(result); Py_XDECREF(args); Py_XDECREF(function);
     PyGILState_Release(state);
+    [bcePythonLock unlock];
     return ok;
 }
 
