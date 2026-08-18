@@ -8,6 +8,7 @@ static BOOL bceRunning = NO;
 static NSString *bceSavePath;
 static dispatch_once_t bcePythonOnce;
 static NSRecursiveLock *bcePythonLock;
+static PyThreadState *bcePythonMainThreadState;
 PyMODINIT_FUNC PyInit_bcebridge(void);
 
 static void bceEnsurePython(void) {
@@ -18,6 +19,9 @@ static void bceEnsurePython(void) {
         bcePythonLock = [NSRecursiveLock new];
         PyImport_AppendInittab("bcebridge", &PyInit_bcebridge);
         Py_Initialize();
+        // Release the interpreter lock after embedding. Calls from Swift
+        // reacquire it with PyGILState_Ensure on their worker thread.
+        bcePythonMainThreadState = PyEval_SaveThread();
     });
 }
 
