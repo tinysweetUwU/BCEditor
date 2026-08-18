@@ -51,7 +51,8 @@ struct ToolsView: View {
         EditorTool(title: "Levels", icon: "map.fill", color: .indigo, features: ["Story, SOL, Event & Collab", "Towers, Gauntlets, Zero Legends", "Aku Realm, Enigma, Outbreaks", "Treasures, Dojo & Challenge"], menuIndex: 4),
         EditorTool(title: "Gamatoto", icon: "hammer.fill", color: .teal, features: ["Engineers & Base Materials", "Gamatoto XP / Helpers", "Ototo Cat Cannon", "Cat Shrine"], menuIndex: 5),
         EditorTool(title: "Account", icon: "person.crop.circle.fill", color: .blue, features: ["Inquiry Code", "Password Refresh Token", "Managed Items", "Region & Game Version"], menuIndex: 6),
-        EditorTool(title: "Gatya & Other", icon: "sparkles", color: .purple, features: ["Gatya Seeds", "Missions & Medals", "Gold Pass & Playtime", "Fixes / crash recovery"], menuIndex: 7)
+        EditorTool(title: "Gatya & Other", icon: "sparkles", color: .purple, features: ["Gatya Seeds", "Missions & Medals", "Gold Pass & Playtime"], menuIndex: 7),
+        EditorTool(title: "Fixes", icon: "wrench.and.screwdriver.fill", color: .red, features: ["Gamatoto crash", "Ototo crash", "Time errors"], menuIndex: 8)
     ]
 
     var body: some View {
@@ -145,6 +146,15 @@ struct ToolDetail: View {
                         store.applyNativeAction("unlock_aku_realm")
                     }
                     .disabled(!store.hasSave)
+                }
+            } else if tool.title == "Fixes" {
+                Section("Direct fixes") {
+                    Button("Fix Gamatoto crash", systemImage: "wrench.and.screwdriver") { store.applyNativeAction("fix_gamatoto_crash") }
+                        .disabled(!store.hasSave)
+                    Button("Fix Ototo crash", systemImage: "hammer.fill") { store.applyNativeAction("fix_ototo_crash") }
+                        .disabled(!store.hasSave)
+                    Button("Fix time errors", systemImage: "clock.arrow.2.circlepath") { store.applyNativeAction("fix_time_errors") }
+                        .disabled(!store.hasSave)
                 }
             } else {
                 Section("Editor") {

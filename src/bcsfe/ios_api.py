@@ -31,6 +31,16 @@ def apply(path: str, action: str, value: int = 0) -> None:
     elif action == "unlock_aku_realm":
         for stage_id in (255, 256, 257, 258, 265, 266, 268):
             save.event_stages.clear_map(1, stage_id, 0, False)
+    elif action == "fix_gamatoto_crash":
+        save.gamatoto.skin = 2
+    elif action == "fix_ototo_crash":
+        save.ototo.cannons = core.game.gamoto.ototo.Cannons.init(save.game_version)
+    elif action == "fix_time_errors":
+        import datetime
+        now = datetime.datetime.now()
+        save.date_3 = now
+        save.timestamp = now.timestamp()
+        save.energy_penalty_timestamp = now.timestamp()
 
     save.to_data().to_file(save_path)
 
