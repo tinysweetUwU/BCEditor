@@ -145,7 +145,7 @@ final class SaveStore: ObservableObject {
         guard data.count >= 32 else { return }
         let payload = Data(data.dropLast(32))
         let digest = Insecure.MD5.hash(data: Data("battlecats\(region.patchingCode)".utf8) + payload)
-        data.replaceSubrange((data.count - 32)..<data.count, with: Data(digest.description.utf8))
+        data.replaceSubrange((data.count - 32)..<data.count, with: Data(digest.map { String(format: "%02x", $0) }.joined().utf8))
     }
 
     private static func inspect(_ data: Data) -> SaveSummary? {
@@ -161,7 +161,8 @@ final class SaveStore: ObservableObject {
     private static func validHash(_ data: Data, region: SaveRegion) -> Bool {
         guard let stored = String(data: data.suffix(32), encoding: .utf8) else { return false }
         let digest = Insecure.MD5.hash(data: Data("battlecats\(region.patchingCode)".utf8) + Data(data.dropLast(32)))
-        return stored.lowercased() == digest.description.lowercased()
+        let expected = digest.map { String(format: "%02x", $0) }.joined()
+        return stored.lowercased() == expected
     }
 
     private static func catFoodOffset(for summary: SaveSummary) -> Int? { summary.gameVersion >= 10 || summary.region != .jp ? 7 : 6 }
