@@ -1,5 +1,40 @@
 import SwiftUI
 
+struct GitHubProfile: Decodable {
+    let login: String
+    let name: String?
+    let avatarURL: URL
+    let htmlURL: URL
+
+    enum CodingKeys: String, CodingKey {
+        case login, name
+        case avatarURL = "avatar_url"
+        case htmlURL = "html_url"
+    }
+}
+
+@MainActor
+final class GitHubAuthor: ObservableObject {
+    @Published var profile = GitHubProfile(
+        login: "tinysweetUwU",
+        name: "tinysweet",
+        avatarURL: URL(string: "https://avatars.githubusercontent.com/u/110331292?v=4")!,
+        htmlURL: URL(string: "https://github.com/tinysweetUwU")!
+    )
+
+    init() {
+        Task {
+            guard let url = URL(string: "https://api.github.com/users/tinysweetUwU") else { return }
+            var request = URLRequest(url: url)
+            request.setValue("BCEditor", forHTTPHeaderField: "User-Agent")
+            if let (data, _) = try? await URLSession.shared.data(for: request),
+               let fetched = try? JSONDecoder().decode(GitHubProfile.self, from: data) {
+                profile = fetched
+            }
+        }
+    }
+}
+
 struct EditorTool: Identifiable, Hashable {
     let id = UUID()
     let title: String
@@ -102,6 +137,8 @@ struct ToolDetail: View {
 }
 
 struct SettingsView: View {
+    @StateObject private var author = GitHubAuthor()
+
     var body: some View {
         NavigationStack {
             List {
@@ -110,7 +147,7 @@ struct SettingsView: View {
                 }
                 Section("Author") {
                     HStack(spacing: 14) {
-                        AsyncImage(url: URL(string: "https://github.com/tinysweetUwU.png?size=160")) { phase in
+                        AsyncImage(url: author.profile.avatarURL) { phase in
                             if let image = phase.image {
                                 image.resizable().scaledToFill()
                             } else {
@@ -122,13 +159,13 @@ struct SettingsView: View {
                         .clipShape(Circle())
 
                         VStack(alignment: .leading, spacing: 3) {
-                            Text("tinysweet").font(.headline)
-                            Text("BCEditor creator").font(.caption).foregroundStyle(.secondary)
+                            Text(author.profile.name ?? author.profile.login).font(.headline)
+                            Text("@\(author.profile.login)").font(.caption).foregroundStyle(.secondary)
                         }
                         Spacer()
                         Image(systemName: "chevron.right").foregroundStyle(.tertiary)
                     }
-                    Link(destination: URL(string: "https://github.com/tinysweetUwU/BCEditor")!) {
+                    Link(destination: author.profile.htmlURL) {
                         Label("Open GitHub repository", systemImage: "link")
                     }
                 }

@@ -29,6 +29,7 @@ targets:
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.utilities
         INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
         TARGETED_DEVICE_FAMILY: "1,2"
+        INFOPLIST_KEY_UIDeviceFamily: "1,2"
         INFOPLIST_KEY_UIRequiresFullScreen: YES
         SWIFT_OBJC_BRIDGING_HEADER: iOS/BCEditor/PythonBridge.h
     scheme:

@@ -32,7 +32,12 @@ final class SaveStore: ObservableObject {
     func importSave(from url: URL) {
         do {
             let scoped = url.startAccessingSecurityScopedResource(); defer { if scoped { url.stopAccessingSecurityScopedResource() } }
-            let imported = try Data(contentsOf: url)
+            // Files providers may return a security-scoped, non-local URL. Copy it
+            // into the app's temporary container before parsing.
+            let localURL = FileManager.default.temporaryDirectory.appendingPathComponent("BCEditor-import-\(UUID().uuidString)")
+            try? FileManager.default.removeItem(at: localURL)
+            try FileManager.default.copyItem(at: url, to: localURL)
+            let imported = try Data(contentsOf: localURL, options: .mappedIfSafe)
             guard let result = Self.inspect(imported) else { throw SaveError.invalid }
             data = imported; summary = result; selectedRegion = result.region; sourceURL = url; fileName = url.lastPathComponent
             backup()
