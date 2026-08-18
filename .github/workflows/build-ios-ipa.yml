@@ -45,6 +45,13 @@ jobs:
           (cd "$EXPORT_PATH" && zip -qry ../BCEditor-unsigned.ipa Payload)
       - name: Upload build diagnostics
         if: ${{ failure() }}
+        run: |
+          if [ -f build/xcodebuild.log ]; then
+            grep -E "(error:|fatal error:|No such module|BUILD FAILED)" build/xcodebuild.log | head -50 | while IFS= read -r line; do echo "::error::$line"; done
+          fi
+        shell: bash
+      - name: Upload build diagnostics artifact
+        if: ${{ failure() }}
         uses: actions/upload-artifact@v4
         with:
           name: BCEditor-build-diagnostics
