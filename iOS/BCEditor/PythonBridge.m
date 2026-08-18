@@ -6,6 +6,18 @@ static NSMutableArray<NSString *> *bceInputs;
 static NSMutableString *bceOutput;
 static BOOL bceRunning = NO;
 static NSString *bceSavePath;
+static dispatch_once_t bcePythonOnce;
+PyMODINIT_FUNC PyInit_bcebridge(void);
+
+static void bceEnsurePython(void) {
+    dispatch_once(&bcePythonOnce, ^{
+        bceCondition = [NSCondition new];
+        bceInputs = [NSMutableArray new];
+        bceOutput = [NSMutableString new];
+        PyImport_AppendInittab("bcebridge", &PyInit_bcebridge);
+        Py_Initialize();
+    });
+}
 
 static NSString *bceQuote(NSString *value) {
     NSData *data = [NSJSONSerialization dataWithJSONObject:@[value] options:0 error:nil];
@@ -47,12 +59,7 @@ static struct PyModuleDef bceModule = {PyModuleDef_HEAD_INIT, "bcebridge", NULL,
 PyMODINIT_FUNC PyInit_bcebridge(void) { return PyModule_Create(&bceModule); }
 
 void BCEPythonStart(NSString *savePath) {
-    static dispatch_once_t once;
-    dispatch_once(&once, ^{
-        bceCondition = [NSCondition new]; bceInputs = [NSMutableArray new]; bceOutput = [NSMutableString new];
-        PyImport_AppendInittab("bcebridge", &PyInit_bcebridge);
-        Py_Initialize();
-    });
+    bceEnsurePython();
     [bceCondition lock]; bceRunning = YES; bceSavePath = savePath; [bceInputs removeAllObjects]; [bceOutput setString:@""]; [bceCondition unlock];
     dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
         PyGILState_STATE state = PyGILState_Ensure();
@@ -65,6 +72,19 @@ void BCEPythonStart(NSString *savePath) {
         PyGILState_Release(state);
         [bceCondition lock]; bceRunning = NO; [bceCondition broadcast]; [bceCondition unlock];
     });
+}
+
+BOOL BCEPythonApplyAction(NSString *savePath, NSString *action, NSInteger value) {
+    bceEnsurePython();
+    PyGILState_STATE state = PyGILState_Ensure();
+    NSString *sourcePackage = [NSBundle.mainBundle pathForResource:@"bcsfe" ofType:nil] ?: @"";
+    NSString *source = sourcePackage.stringByDeletingLastPathComponent;
+    NSString *vendor = [NSBundle.mainBundle pathForResource:@"vendor" ofType:nil inDirectory:@"PythonRuntime"] ?: @"";
+    NSString *support = NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES).firstObject ?: NSTemporaryDirectory();
+    NSString *script = [NSString stringWithFormat:@"import sys; sys.path[:0]=[%@,%@]; from bcsfe.ios_api import apply; apply(%@,%@,%ld)", bceQuote(source), bceQuote(vendor), bceQuote(savePath), bceQuote(action), (long)value];
+    int result = PyRun_SimpleString(script.UTF8String);
+    PyGILState_Release(state);
+    return result == 0;
 }
 
 void BCEPythonSubmitInput(NSString *line) { [bceCondition lock]; [bceInputs addObject:line]; [bceCondition signal]; [bceCondition unlock]; }

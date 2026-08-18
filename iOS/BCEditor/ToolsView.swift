@@ -123,6 +123,21 @@ struct ToolDetail: View {
                     directField("Platinum Shards", text: $platinumShards, field: "platinum_shards")
                     directField("NP", text: $np, field: "np")
                     directField("Leadership", text: $leadership, field: "leadership")
+                    Button("Max all basic items", systemImage: "arrow.up.to.line") {
+                        store.applyNativeAction("max_items")
+                    }
+                    .disabled(!store.hasSave)
+                }
+            } else if tool.title == "Cats & Skills" {
+                Section("Direct edit") {
+                    Button("Unlock all cats", systemImage: "lock.open.fill") {
+                        store.applyNativeAction("unlock_all_cats")
+                    }
+                    .disabled(!store.hasSave)
+                    Button("Unlock, max level and forms", systemImage: "star.fill") {
+                        store.applyNativeAction("max_cats")
+                    }
+                    .disabled(!store.hasSave)
                 }
             } else {
                 Section("Editor") {

@@ -105,6 +105,17 @@ final class SaveStore: ObservableObject {
         }
     }
 
+    func applyNativeAction(_ action: String, value: Int = 0) {
+        guard let url = exportSave() else { return }
+        DispatchQueue.global(qos: .userInitiated).async {
+            let ok = BCEPythonApplyAction(url.path, action, value)
+            DispatchQueue.main.async {
+                self.importSave(from: url)
+                self.message = ok ? "Đã áp dụng thay đổi." : "Không thể áp dụng thay đổi cho save này."
+            }
+        }
+    }
+
     func exportSave() -> URL? {
         guard hasSave else { return nil }
         let url = documentsDirectory.appendingPathComponent("Exports", isDirectory: true).appendingPathComponent("SAVE_DATA")
