@@ -68,8 +68,7 @@ final class SaveStore: ObservableObject {
             try? FileManager.default.removeItem(at: localURL)
             try imported.write(to: localURL, options: .atomic)
             guard let result = Self.inspect(imported) else { throw SaveError.invalid }
-            data = imported; summary = result; selectedRegion = result.region; sourceURL = url; fileName = url.lastPathComponent
-            loadBasicValues(from: localURL)
+            data = imported; summary = result; sourceURL = localURL; fileName = url.lastPathComponent
             backup()
             message = "Đã mở save v\(result.versionText) (\(result.region.rawValue.uppercased()))."
         } catch { message = "Không thể mở file này. Hãy chọn SAVE_DATA nguyên gốc." }
@@ -88,7 +87,8 @@ final class SaveStore: ObservableObject {
         message = "Đã cập nhật Cat Food và kiểm tra checksum."
     }
 
-    private func loadBasicValues(from url: URL) {
+    func refreshBasicValues() {
+        guard let url = sourceURL else { return }
         let fields = ["catfood", "xp", "normal_tickets", "rare_tickets", "platinum_tickets", "legend_tickets", "hundred_million_ticket", "platinum_shards", "np", "leadership", "rare_seed", "normal_seed", "event_seed"]
         let path = url.path
         DispatchQueue.global(qos: .userInitiated).async {
