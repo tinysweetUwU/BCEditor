@@ -172,8 +172,9 @@ struct ToolDetail: View {
         }
         .navigationTitle(tool.title)
         .onAppear {
-            catFood = store.summary.map { String($0.catFood) } ?? ""
+            refreshValues()
         }
+        .onChange(of: store.basicValues) { _, _ in refreshValues() }
         .alert("Editor đang được mở rộng", isPresented: $showingEditor) {
             Button("OK", role: .cancel) { }
         } message: {
@@ -190,6 +191,17 @@ struct ToolDetail: View {
             }
             .disabled(!store.hasSave || Int(text.wrappedValue) == nil)
         }
+    }
+
+    private func refreshValues() {
+        catFood = store.basicValues["catfood"].map { String($0) } ?? store.summary.map { String($0.catFood) } ?? ""
+        xp = store.basicValues["xp"].map { String($0) } ?? ""
+        normalTickets = store.basicValues["normal_tickets"].map { String($0) } ?? ""
+        rareTickets = store.basicValues["rare_tickets"].map { String($0) } ?? ""
+        platinumTickets = store.basicValues["platinum_tickets"].map { String($0) } ?? ""
+        platinumShards = store.basicValues["platinum_shards"].map { String($0) } ?? ""
+        np = store.basicValues["np"].map { String($0) } ?? ""
+        leadership = store.basicValues["leadership"].map { String($0) } ?? ""
     }
 }
 

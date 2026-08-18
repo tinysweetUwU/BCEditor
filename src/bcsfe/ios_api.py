@@ -33,3 +33,25 @@ def apply(path: str, action: str, value: int = 0) -> None:
             save.event_stages.clear_map(1, stage_id, 0, False)
 
     save.to_data().to_file(save_path)
+
+
+_SCALARS = ("catfood", "xp", "normal_tickets", "rare_tickets", "platinum_tickets",
+            "legend_tickets", "platinum_shards", "np", "leadership")
+
+
+def read_value(path: str, field: str) -> int:
+    core.core_data.init_data()
+    save = core.SaveFile(core.Path(path).read())
+    if field not in _SCALARS:
+        raise ValueError(field)
+    return int(getattr(save, field, 0))
+
+
+def write_value(path: str, field: str, value: int) -> None:
+    core.core_data.init_data()
+    if field not in _SCALARS:
+        raise ValueError(field)
+    save_path = core.Path(path)
+    save = core.SaveFile(save_path.read())
+    setattr(save, field, max(0, int(value)))
+    save.to_data().to_file(save_path)

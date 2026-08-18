@@ -21,6 +21,7 @@ struct SaveSummary: Equatable {
 @MainActor
 final class SaveStore: ObservableObject {
     @Published private(set) var summary: SaveSummary?
+    @Published private(set) var basicValues: [String: Int] = [:]
     @Published private(set) var fileName = "Chưa chọn save"
     @Published var message: String?
     @Published var selectedRegion: SaveRegion = .en
@@ -66,6 +67,7 @@ final class SaveStore: ObservableObject {
             let imported = try Data(contentsOf: localURL, options: .mappedIfSafe)
             guard let result = Self.inspect(imported) else { throw SaveError.invalid }
             data = imported; summary = result; selectedRegion = result.region; sourceURL = url; fileName = url.lastPathComponent
+            loadBasicValues(from: localURL)
             backup()
             message = "Đã mở save v\(result.versionText) (\(result.region.rawValue.uppercased()))."
         } catch { message = "Không thể mở file này. Hãy chọn SAVE_DATA nguyên gốc." }
@@ -81,27 +83,25 @@ final class SaveStore: ObservableObject {
         self.summary = summary; backup(); message = "Đã cập nhật Cat Food và kiểm tra lại checksum."
     }
 
-    // Native Tools calls this method directly; the parser is hidden behind the form.
+    private func loadBasicValues(from url: URL) {
+        let fields = ["catfood", "xp", "normal_tickets", "rare_tickets", "platinum_tickets", "platinum_shards", "np", "leadership"]
+        let path = url.path
+        DispatchQueue.global(qos: .userInitiated).async {
+            var values: [String: Int] = [:]
+            for field in fields { values[field] = Int(BCEPythonReadValue(path, field)) }
+            DispatchQueue.main.async { self.basicValues = values }
+        }
+    }
+
+    // Native Tools calls this method directly; no interactive input is used.
     func updateBasicItem(_ field: String, value: Int) {
         guard let url = exportSave() else { return }
-        let indexes = ["catfood": 1, "xp": 2, "normal_tickets": 3, "rare_tickets": 4,
-                       "platinum_tickets": 6, "legend_tickets": 7, "platinum_shards": 8,
-                       "np": 9, "leadership": 10, "battle_items": 11, "catseyes": 13,
-                       "catfruit": 14, "catamins": 15]
-        guard let index = indexes[field] else { return }
-        BCEPythonStart(url.path)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            BCEPythonQueueInput("2")
-            BCEPythonQueueInput(String(index))
-            if ["catfood", "rare_tickets", "platinum_tickets", "legend_tickets"].contains(field) {
-                BCEPythonQueueInput("1")
+        DispatchQueue.global(qos: .userInitiated).async {
+            let ok = BCEPythonWriteValue(url.path, field, value)
+            DispatchQueue.main.async {
+                if ok { self.importSave(from: url) }
+                self.message = ok ? "Đã cập nhật (field)." : "Không thể cập nhật (field)."
             }
-            BCEPythonQueueInput(String(max(0, value)))
-            BCEPythonQueueInput("11")
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 4.0) {
-            self.importPythonSaveIfPresent()
-            self.message = "Đã cập nhật (field). Hãy xuất SAVE_DATA để lưu bản chỉnh sửa."
         }
     }
 

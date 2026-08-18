@@ -7,4 +7,6 @@ FOUNDATION_EXPORT void BCEPythonQueueInput(NSString *line);
 FOUNDATION_EXPORT NSString *BCEPythonDrainOutput(void);
 FOUNDATION_EXPORT BOOL BCEPythonIsRunning(void);
 FOUNDATION_EXPORT BOOL BCEPythonApplyAction(NSString *savePath, NSString *action, NSInteger value);
+FOUNDATION_EXPORT NSInteger BCEPythonReadValue(NSString *savePath, NSString *field);
+FOUNDATION_EXPORT BOOL BCEPythonWriteValue(NSString *savePath, NSString *field, NSInteger value);
 NS_ASSUME_NONNULL_END

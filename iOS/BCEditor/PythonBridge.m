@@ -87,6 +87,45 @@ BOOL BCEPythonApplyAction(NSString *savePath, NSString *action, NSInteger value)
     return result == 0;
 }
 
+static PyObject *bceAPIFunction(const char *name) {
+    NSString *sourcePackage = [NSBundle.mainBundle pathForResource:@"bcsfe" ofType:nil] ?: @"";
+    NSString *source = sourcePackage.stringByDeletingLastPathComponent;
+    NSString *vendor = [NSBundle.mainBundle pathForResource:@"vendor" ofType:nil inDirectory:@"PythonRuntime"] ?: @"";
+    NSString *script = [NSString stringWithFormat:@"import sys; sys.path[:0]=[%@,%@]", bceQuote(source), bceQuote(vendor)];
+    if (PyRun_SimpleString(script.UTF8String) != 0) return NULL;
+    PyObject *module = PyImport_ImportModule("bcsfe.ios_api");
+    if (!module) { PyErr_Clear(); return NULL; }
+    PyObject *function = PyObject_GetAttrString(module, name);
+    Py_DECREF(module);
+    return function;
+}
+
+NSInteger BCEPythonReadValue(NSString *savePath, NSString *field) {
+    bceEnsurePython();
+    PyGILState_STATE state = PyGILState_Ensure();
+    PyObject *function = bceAPIFunction("read_value");
+    PyObject *args = Py_BuildValue("ss", savePath.UTF8String, field.UTF8String);
+    PyObject *result = function ? PyObject_CallObject(function, args) : NULL;
+    NSInteger value = result ? (NSInteger)PyLong_AsLong(result) : 0;
+    if (!result) PyErr_Clear();
+    Py_XDECREF(result); Py_XDECREF(args); Py_XDECREF(function);
+    PyGILState_Release(state);
+    return value;
+}
+
+BOOL BCEPythonWriteValue(NSString *savePath, NSString *field, NSInteger value) {
+    bceEnsurePython();
+    PyGILState_STATE state = PyGILState_Ensure();
+    PyObject *function = bceAPIFunction("write_value");
+    PyObject *args = Py_BuildValue("ssi", savePath.UTF8String, field.UTF8String, (int)value);
+    PyObject *result = function ? PyObject_CallObject(function, args) : NULL;
+    BOOL ok = result != NULL;
+    if (!result) PyErr_Clear();
+    Py_XDECREF(result); Py_XDECREF(args); Py_XDECREF(function);
+    PyGILState_Release(state);
+    return ok;
+}
+
 void BCEPythonSubmitInput(NSString *line) { [bceCondition lock]; [bceInputs addObject:line]; [bceCondition signal]; [bceCondition unlock]; }
 void BCEPythonQueueInput(NSString *line) { [bceCondition lock]; [bceInputs addObject:line]; [bceCondition broadcast]; [bceCondition unlock]; }
 NSString *BCEPythonDrainOutput(void) { [bceCondition lock]; NSString *value = [bceOutput copy]; [bceOutput setString:@""]; [bceCondition unlock]; return value; }
