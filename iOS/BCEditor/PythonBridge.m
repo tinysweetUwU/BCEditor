@@ -7,8 +7,7 @@ static NSMutableString *bceOutput;
 static BOOL bceRunning = NO;
 static NSString *bceSavePath;
 static dispatch_once_t bcePythonOnce;
-static NSRecursiveLock *bcePythonLock;
-static PyThreadState *bcePythonMainThreadState;
+static dispatch_queue_t bcePythonQueue;
 PyMODINIT_FUNC PyInit_bcebridge(void);
 
 static void bceEnsurePython(void) {
@@ -16,12 +15,12 @@ static void bceEnsurePython(void) {
         bceCondition = [NSCondition new];
         bceInputs = [NSMutableArray new];
         bceOutput = [NSMutableString new];
-        bcePythonLock = [NSRecursiveLock new];
-        PyImport_AppendInittab("bcebridge", &PyInit_bcebridge);
-        Py_Initialize();
-        // Release the interpreter lock after embedding. Calls from Swift
-        // reacquire it with PyGILState_Ensure on their worker thread.
-        bcePythonMainThreadState = PyEval_SaveThread();
+        bcePythonQueue = dispatch_queue_create("com.bceditor.python", DISPATCH_QUEUE_SERIAL);
+        dispatch_sync(bcePythonQueue, ^{
+            PyImport_AppendInittab("bcebridge", &PyInit_bcebridge);
+            Py_Initialize();
+            PyEval_SaveThread();
+        });
     });
 }
 
@@ -67,7 +66,7 @@ PyMODINIT_FUNC PyInit_bcebridge(void) { return PyModule_Create(&bceModule); }
 void BCEPythonStart(NSString *savePath) {
     bceEnsurePython();
     [bceCondition lock]; bceRunning = YES; bceSavePath = savePath; [bceInputs removeAllObjects]; [bceOutput setString:@""]; [bceCondition unlock];
-    dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
+    dispatch_async(bcePythonQueue, ^{
         PyGILState_STATE state = PyGILState_Ensure();
         NSString *sourcePackage = [NSBundle.mainBundle pathForResource:@"bcsfe" ofType:nil] ?: @"";
         NSString *source = sourcePackage.stringByDeletingLastPathComponent;
@@ -82,17 +81,19 @@ void BCEPythonStart(NSString *savePath) {
 
 BOOL BCEPythonApplyAction(NSString *savePath, NSString *action, NSInteger value) {
     bceEnsurePython();
-    [bcePythonLock lock];
-    PyGILState_STATE state = PyGILState_Ensure();
-    NSString *sourcePackage = [NSBundle.mainBundle pathForResource:@"bcsfe" ofType:nil] ?: @"";
-    NSString *source = sourcePackage.stringByDeletingLastPathComponent;
-    NSString *vendor = [NSBundle.mainBundle pathForResource:@"vendor" ofType:nil inDirectory:@"PythonRuntime"] ?: @"";
-    NSString *support = NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES).firstObject ?: NSTemporaryDirectory();
-    NSString *script = [NSString stringWithFormat:@"import sys; sys.path[:0]=[%@,%@]; from bcsfe.ios_api import apply; assert apply(%@,%@,%ld)", bceQuote(source), bceQuote(vendor), bceQuote(savePath), bceQuote(action), (long)value];
-    int result = PyRun_SimpleString(script.UTF8String);
-    PyGILState_Release(state);
-    [bcePythonLock unlock];
-    return result == 0;
+    __block BOOL ok = NO;
+    dispatch_sync(bcePythonQueue, ^{
+        PyGILState_STATE state = PyGILState_Ensure();
+        NSString *sourcePackage = [NSBundle.mainBundle pathForResource:@"bcsfe" ofType:nil] ?: @"";
+        NSString *source = sourcePackage.stringByDeletingLastPathComponent;
+        NSString *vendor = [NSBundle.mainBundle pathForResource:@"vendor" ofType:nil inDirectory:@"PythonRuntime"] ?: @"";
+        NSString *script = [NSString stringWithFormat:@"import sys; sys.path[:0]=[%@,%@]; from bcsfe.ios_api import apply; assert apply(%@,%@,%ld)", bceQuote(source), bceQuote(vendor), bceQuote(savePath), bceQuote(action), (long)value];
+        int result = PyRun_SimpleString(script.UTF8String);
+        if (result != 0) PyErr_Clear();
+        PyGILState_Release(state);
+        ok = result == 0;
+    });
+    return ok;
 }
 
 static PyObject *bceAPIFunction(const char *name) {
@@ -110,53 +111,55 @@ static PyObject *bceAPIFunction(const char *name) {
 
 NSInteger BCEPythonReadValue(NSString *savePath, NSString *field) {
     bceEnsurePython();
-    [bcePythonLock lock];
-    PyGILState_STATE state = PyGILState_Ensure();
-    PyObject *function = bceAPIFunction("read_value");
-    PyObject *args = Py_BuildValue("ss", savePath.UTF8String, field.UTF8String);
-    PyObject *result = function ? PyObject_CallObject(function, args) : NULL;
-    NSInteger value = result ? (NSInteger)PyLong_AsLong(result) : 0;
-    if (!result) PyErr_Clear();
-    Py_XDECREF(result); Py_XDECREF(args); Py_XDECREF(function);
-    PyGILState_Release(state);
-    [bcePythonLock unlock];
+    __block NSInteger value = 0;
+    dispatch_sync(bcePythonQueue, ^{
+        PyGILState_STATE state = PyGILState_Ensure();
+        PyObject *function = bceAPIFunction("read_value");
+        PyObject *args = Py_BuildValue("ss", savePath.UTF8String, field.UTF8String);
+        PyObject *result = function ? PyObject_CallObject(function, args) : NULL;
+        if (result && PyLong_Check(result)) value = (NSInteger)PyLong_AsLong(result);
+        if (!result) PyErr_Clear();
+        Py_XDECREF(result); Py_XDECREF(args); Py_XDECREF(function);
+        PyGILState_Release(state);
+    });
     return value;
 }
 
 NSDictionary<NSString *, NSNumber *> *BCEPythonReadValues(NSString *savePath) {
     bceEnsurePython();
-    [bcePythonLock lock];
-    PyGILState_STATE state = PyGILState_Ensure();
-    PyObject *function = bceAPIFunction("read_values");
-    PyObject *args = Py_BuildValue("s", savePath.UTF8String);
-    PyObject *result = function ? PyObject_CallObject(function, args) : NULL;
-    NSMutableDictionary *values = [NSMutableDictionary dictionary];
-    if (result && PyDict_Check(result)) {
-        PyObject *key = NULL, *item = NULL;
-        Py_ssize_t position = 0;
-        while (PyDict_Next(result, &position, &key, &item)) {
-            const char *name = PyUnicode_Check(key) ? PyUnicode_AsUTF8(key) : NULL;
-            if (name && PyLong_Check(item)) values[[NSString stringWithUTF8String:name]] = @(PyLong_AsLong(item));
-        }
-    } else if (!result) { PyErr_Clear(); }
-    Py_XDECREF(result); Py_XDECREF(args); Py_XDECREF(function);
-    PyGILState_Release(state);
-    [bcePythonLock unlock];
+    __block NSMutableDictionary *values = [NSMutableDictionary dictionary];
+    dispatch_sync(bcePythonQueue, ^{
+        PyGILState_STATE state = PyGILState_Ensure();
+        PyObject *function = bceAPIFunction("read_values");
+        PyObject *args = Py_BuildValue("s", savePath.UTF8String);
+        PyObject *result = function ? PyObject_CallObject(function, args) : NULL;
+        if (result && PyDict_Check(result)) {
+            PyObject *key = NULL, *item = NULL;
+            Py_ssize_t position = 0;
+            while (PyDict_Next(result, &position, &key, &item)) {
+                const char *name = PyUnicode_Check(key) ? PyUnicode_AsUTF8(key) : NULL;
+                if (name && PyLong_Check(item)) values[[NSString stringWithUTF8String:name]] = @(PyLong_AsLong(item));
+            }
+        } else if (!result) { PyErr_Clear(); }
+        Py_XDECREF(result); Py_XDECREF(args); Py_XDECREF(function);
+        PyGILState_Release(state);
+    });
     return values;
 }
 
 BOOL BCEPythonWriteValue(NSString *savePath, NSString *field, NSInteger value) {
     bceEnsurePython();
-    [bcePythonLock lock];
-    PyGILState_STATE state = PyGILState_Ensure();
-    PyObject *function = bceAPIFunction("write_value");
-    PyObject *args = Py_BuildValue("ssi", savePath.UTF8String, field.UTF8String, (int)value);
-    PyObject *result = function ? PyObject_CallObject(function, args) : NULL;
-    BOOL ok = result != NULL;
-    if (!result) PyErr_Clear();
-    Py_XDECREF(result); Py_XDECREF(args); Py_XDECREF(function);
-    PyGILState_Release(state);
-    [bcePythonLock unlock];
+    __block BOOL ok = NO;
+    dispatch_sync(bcePythonQueue, ^{
+        PyGILState_STATE state = PyGILState_Ensure();
+        PyObject *function = bceAPIFunction("write_value");
+        PyObject *args = Py_BuildValue("ssi", savePath.UTF8String, field.UTF8String, (int)value);
+        PyObject *result = function ? PyObject_CallObject(function, args) : NULL;
+        ok = result != NULL;
+        if (!result) PyErr_Clear();
+        Py_XDECREF(result); Py_XDECREF(args); Py_XDECREF(function);
+        PyGILState_Release(state);
+    });
     return ok;
 }
 
