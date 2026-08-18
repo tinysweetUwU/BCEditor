@@ -96,6 +96,11 @@ def apply(path: str, action: str, value: int = 0) -> None:
         for cannon in save.ototo.cannons.cannons.values():
             cannon.development = max(cannon.development, 3)
             cannon.levels = [max(10, int(level)) for level in cannon.levels]
+    elif action == "max_gamatoto_materials":
+        for material in save.ototo.base_materials.materials:
+            material.amount = 9999
+    elif action == "max_cat_shrine":
+        save.cat_shrine.xp_offering = 2_000_000_000
     elif action == "unlock_equip_menu":
         save.unlock_equip_menu()
     elif action == "reset_officer_pass":
