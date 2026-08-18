@@ -163,6 +163,8 @@ struct ToolDetail: View {
                 Section("Direct edit") {
                     Button("Unlock equipment menu", systemImage: "lock.open.fill") { store.applyNativeAction("unlock_equip_menu") }
                         .disabled(!store.hasSave)
+                    Button("Reset Gold Pass data", systemImage: "arrow.counterclockwise") { store.applyNativeAction("reset_officer_pass") }
+                        .disabled(!store.hasSave)
                 }
             } else if tool.title == "Gatya & Other" {
                 Section("Direct edit") {

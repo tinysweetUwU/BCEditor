@@ -100,7 +100,7 @@ final class SaveStore: ObservableObject {
             let ok = BCEPythonWriteValue(url.path, field, value)
             DispatchQueue.main.async {
                 if ok { self.importSave(from: url) }
-                self.message = ok ? "Đã cập nhật (field)." : "Không thể cập nhật (field)."
+                self.message = ok ? "Đã cập nhật \(field)." : "Không thể cập nhật \(field)."
             }
         }
     }
