@@ -92,8 +92,9 @@ final class SaveStore: ObservableObject {
         let fields = ["catfood", "xp", "normal_tickets", "rare_tickets", "platinum_tickets", "legend_tickets", "hundred_million_ticket", "platinum_shards", "np", "leadership", "rare_seed", "normal_seed", "event_seed"]
         let path = url.path
         DispatchQueue.global(qos: .userInitiated).async {
+            let native = BCEPythonReadValues(path)
             var values: [String: Int] = [:]
-            for field in fields { values[field] = Int(BCEPythonReadValue(path, field)) }
+            for field in fields { values[field] = native[field]?.intValue ?? 0 }
             DispatchQueue.main.async { self.basicValues = values }
         }
     }

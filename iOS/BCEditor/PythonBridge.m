@@ -119,6 +119,28 @@ NSInteger BCEPythonReadValue(NSString *savePath, NSString *field) {
     return value;
 }
 
+NSDictionary<NSString *, NSNumber *> *BCEPythonReadValues(NSString *savePath) {
+    bceEnsurePython();
+    [bcePythonLock lock];
+    PyGILState_STATE state = PyGILState_Ensure();
+    PyObject *function = bceAPIFunction("read_values");
+    PyObject *args = Py_BuildValue("s", savePath.UTF8String);
+    PyObject *result = function ? PyObject_CallObject(function, args) : NULL;
+    NSMutableDictionary *values = [NSMutableDictionary dictionary];
+    if (result && PyDict_Check(result)) {
+        PyObject *key = NULL, *item = NULL;
+        Py_ssize_t position = 0;
+        while (PyDict_Next(result, &position, &key, &item)) {
+            const char *name = PyUnicode_Check(key) ? PyUnicode_AsUTF8(key) : NULL;
+            if (name && PyLong_Check(item)) values[[NSString stringWithUTF8String:name]] = @(PyLong_AsLong(item));
+        }
+    } else if (!result) { PyErr_Clear(); }
+    Py_XDECREF(result); Py_XDECREF(args); Py_XDECREF(function);
+    PyGILState_Release(state);
+    [bcePythonLock unlock];
+    return values;
+}
+
 BOOL BCEPythonWriteValue(NSString *savePath, NSString *field, NSInteger value) {
     bceEnsurePython();
     [bcePythonLock lock];

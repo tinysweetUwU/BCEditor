@@ -234,6 +234,12 @@ def read_value(path: str, field: str) -> int:
     return int(_get_field(save, field))
 
 
+def read_values(path: str) -> dict[str, int]:
+    core.core_data.init_data()
+    save = core.SaveFile(core.Path(path).read())
+    return {field: int(_get_field(save, field)) for field in _SCALARS}
+
+
 def write_value(path: str, field: str, value: int) -> None:
     core.core_data.init_data()
     if field not in _SCALARS:
