@@ -137,12 +137,29 @@ def apply(path: str, action: str, value: int = 0) -> None:
         save.gamatoto.xp = 2_000_000_000
         save.gamatoto.remaining_seconds = 0
         save.gamatoto.return_flag = True
+    elif action == "set_gamatoto_helper":
+        packed = int(value)
+        index, helper_id = packed & 0xFFFF, (packed >> 16) & 0xFFFF
+        helpers = save.gamatoto.helpers.helpers
+        if 0 <= index < len(helpers):
+            helpers[index].id = helper_id
+    elif action == "set_ototo_engineers":
+        save.ototo.engineers = max(0, int(value))
     elif action == "max_ototo_cannons":
         if save.ototo.cannons is None:
             save.ototo.cannons = core.game.gamoto.ototo.Cannons.init(save.game_version)
         for cannon in save.ototo.cannons.cannons.values():
             cannon.development = max(cannon.development, 3)
             cannon.levels = [max(10, int(level)) for level in cannon.levels]
+    elif action == "set_ototo_cannon":
+        packed = int(value)
+        cannon_id, development, level = packed & 0xFF, (packed >> 8) & 0xFF, (packed >> 16) & 0xFF
+        if save.ototo.cannons is None:
+            save.ototo.cannons = core.game.gamoto.ototo.Cannons.init(save.game_version)
+        cannon = save.ototo.cannons.cannons.get(cannon_id)
+        if cannon is not None:
+            cannon.development = development
+            cannon.levels = [level for _ in cannon.levels]
     elif action == "max_gamatoto_materials":
         for material in save.ototo.base_materials.materials:
             material.amount = 9999
