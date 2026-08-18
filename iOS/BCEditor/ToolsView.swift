@@ -60,7 +60,7 @@ struct ToolsView: View {
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
                     ForEach(tools) { tool in
                         NavigationLink {
-                            FeatureSessionView(tool: tool)
+                            ToolDetail(tool: tool)
                         } label: {
                             ToolTile(tool: tool)
                         }
