@@ -27,7 +27,33 @@ final class SaveStore: ObservableObject {
     private var data = Data()
     private var sourceURL: URL?
 
+    init() {
+        prepareFilesDirectories()
+    }
+
     var hasSave: Bool { summary != nil }
+
+    private var documentsDirectory: URL {
+        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+    }
+
+    func prepareFilesDirectories() {
+        for folder in ["Import", "Exports", "Backups"] {
+            try? FileManager.default.createDirectory(
+                at: documentsDirectory.appendingPathComponent(folder, isDirectory: true),
+                withIntermediateDirectories: true
+            )
+        }
+    }
+
+    func importPendingSave() {
+        prepareFilesDirectories()
+        let folder = documentsDirectory.appendingPathComponent("Import", isDirectory: true)
+        guard let files = try? FileManager.default.contentsOfDirectory(
+            at: folder, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsHiddenFiles]
+        ), let file = files.first(where: { (try? $0.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) != true }) else { return }
+        importSave(from: file)
+    }
 
     func importSave(from url: URL) {
         do {
@@ -57,8 +83,8 @@ final class SaveStore: ObservableObject {
 
     func exportSave() -> URL? {
         guard hasSave else { return nil }
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent("SAVE_DATA")
-        do { try data.write(to: url, options: .atomic); return url } catch { message = "Không thể tạo file xuất."; return nil }
+        let url = documentsDirectory.appendingPathComponent("Exports", isDirectory: true).appendingPathComponent("SAVE_DATA")
+        do { prepareFilesDirectories(); try data.write(to: url, options: .atomic); return url } catch { message = "Không thể tạo file xuất."; return nil }
     }
 
     func importPythonSaveIfPresent() {
@@ -69,7 +95,7 @@ final class SaveStore: ObservableObject {
 
     private func backup() {
         guard !data.isEmpty else { return }
-        let directory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("Backups", isDirectory: true)
+        let directory = documentsDirectory.appendingPathComponent("Backups", isDirectory: true)
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let formatter = ISO8601DateFormatter(); formatter.formatOptions = [.withInternetDateTime, .withDashSeparatorInDate, .withColonSeparatorInTime]
         try? data.write(to: directory.appendingPathComponent("SAVE_DATA-\(formatter.string(from: .now).replacingOccurrences(of: ":", with: "-"))"), options: .atomic)

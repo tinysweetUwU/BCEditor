@@ -22,6 +22,10 @@ struct RootView: View {
             .frame(width: proxy.size.width, height: proxy.size.height)
         }
         .tint(.orange)
+        .task {
+            store.prepareFilesDirectories()
+            store.importPendingSave()
+        }
         // SAVE_DATA has no extension, so .data can be filtered out by Files on iOS.
         .fileImporter(isPresented: $importing, allowedContentTypes: [.item], allowsMultipleSelection: false) { result in
             if case let .success(urls) = result, let url = urls.first { store.importSave(from: url) }
@@ -78,6 +82,14 @@ struct SaveView: View {
     var body: some View {
         NavigationStack {
             List {
+                Section("On My iPhone") {
+                    Label("BCEditor / Import", systemImage: "folder.fill")
+                    Text("Chép SAVE_DATA vào thư mục này trong Files; app sẽ tự nạp khi mở lại.")
+                        .font(.footnote).foregroundStyle(.secondary)
+                    Button("Quét lại thư mục Import", systemImage: "arrow.clockwise") {
+                        store.importPendingSave()
+                    }
+                }
                 Section("File hiện tại") { LabeledContent("Tên file", value: store.fileName); if let s = store.summary { LabeledContent("Kiểm tra", value: "Checksum hợp lệ · \(s.region.rawValue.uppercased())") } }
                 Section("Quản lý") {
                     Button("Nhập SAVE_DATA", systemImage: "square.and.arrow.down", action: openImporter)
