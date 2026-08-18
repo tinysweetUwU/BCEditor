@@ -41,16 +41,17 @@ struct EditorTool: Identifiable, Hashable {
     let icon: String
     let color: Color
     let features: [String]
+    let menuIndex: Int
 }
 
 struct ToolsView: View {
     private let tools: [EditorTool] = [
-        EditorTool(title: "Items", icon: "shippingbox.fill", color: .orange, features: ["Cat Food", "XP", "Normal / Rare / Platinum Tickets", "NP, Leadership, Battle Items", "Catseyes, Catfruit, Catamins, Orbs"]),
-        EditorTool(title: "Cats & Skills", icon: "pawprint.fill", color: .pink, features: ["Unlock / remove Cats", "Level, Plus Level, Forms", "Talents & Cat Guide", "Special Skills & Cat Storage"]),
-        EditorTool(title: "Levels", icon: "map.fill", color: .indigo, features: ["Story, SOL, Event & Collab", "Towers, Gauntlets, Zero Legends", "Aku Realm, Enigma, Outbreaks", "Treasures, Dojo & Challenge"]),
-        EditorTool(title: "Gamatoto", icon: "hammer.fill", color: .teal, features: ["Engineers & Base Materials", "Gamatoto XP / Helpers", "Ototo Cat Cannon", "Cat Shrine"]),
-        EditorTool(title: "Account", icon: "person.crop.circle.fill", color: .blue, features: ["Inquiry Code", "Password Refresh Token", "Managed Items", "Region & Game Version"]),
-        EditorTool(title: "Gatya & Other", icon: "sparkles", color: .purple, features: ["Gatya Seeds", "Missions & Medals", "Gold Pass & Playtime", "Fixes / crash recovery"])
+        EditorTool(title: "Items", icon: "shippingbox.fill", color: .orange, features: ["Cat Food", "XP", "Normal / Rare / Platinum Tickets", "NP, Leadership, Battle Items", "Catseyes, Catfruit, Catamins, Orbs"], menuIndex: 2),
+        EditorTool(title: "Cats & Skills", icon: "pawprint.fill", color: .pink, features: ["Unlock / remove Cats", "Level, Plus Level, Forms", "Talents & Cat Guide", "Special Skills & Cat Storage"], menuIndex: 3),
+        EditorTool(title: "Levels", icon: "map.fill", color: .indigo, features: ["Story, SOL, Event & Collab", "Towers, Gauntlets, Zero Legends", "Aku Realm, Enigma, Outbreaks", "Treasures, Dojo & Challenge"], menuIndex: 4),
+        EditorTool(title: "Gamatoto", icon: "hammer.fill", color: .teal, features: ["Engineers & Base Materials", "Gamatoto XP / Helpers", "Ototo Cat Cannon", "Cat Shrine"], menuIndex: 5),
+        EditorTool(title: "Account", icon: "person.crop.circle.fill", color: .blue, features: ["Inquiry Code", "Password Refresh Token", "Managed Items", "Region & Game Version"], menuIndex: 6),
+        EditorTool(title: "Gatya & Other", icon: "sparkles", color: .purple, features: ["Gatya Seeds", "Missions & Medals", "Gold Pass & Playtime", "Fixes / crash recovery"], menuIndex: 7)
     ]
 
     var body: some View {
@@ -58,7 +59,9 @@ struct ToolsView: View {
             ScrollView {
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
                     ForEach(tools) { tool in
-                        NavigationLink(value: tool) {
+                        NavigationLink {
+                            FeatureSessionView(tool: tool)
+                        } label: {
                             ToolTile(tool: tool)
                         }
                     }
@@ -66,9 +69,6 @@ struct ToolsView: View {
                 .padding()
             }
             .navigationTitle("Tools")
-            .navigationDestination(for: EditorTool.self) { tool in
-                ToolDetail(tool: tool)
-            }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
