@@ -59,12 +59,14 @@ final class SaveStore: ObservableObject {
     func importSave(from url: URL) {
         do {
             let scoped = url.startAccessingSecurityScopedResource(); defer { if scoped { url.stopAccessingSecurityScopedResource() } }
-            // Files providers may return a security-scoped, non-local URL. Copy it
-            // into the app's temporary container before parsing.
+            let values = try url.resourceValues(forKeys: [.isRegularFileKey, .isDirectoryKey, .isSymbolicLinkKey])
+            guard values.isRegularFile == true, values.isDirectory != true, values.isSymbolicLink != true else { throw SaveError.invalid }
+            // Read the provider URL while its security scope is active, then work
+            // only with an app-owned copy. This also handles iCloud/Files URLs.
+            let imported = try Data(contentsOf: url, options: .mappedIfSafe)
             let localURL = FileManager.default.temporaryDirectory.appendingPathComponent("BCEditor-import-\(UUID().uuidString)")
             try? FileManager.default.removeItem(at: localURL)
-            try FileManager.default.copyItem(at: url, to: localURL)
-            let imported = try Data(contentsOf: localURL, options: .mappedIfSafe)
+            try imported.write(to: localURL, options: .atomic)
             guard let result = Self.inspect(imported) else { throw SaveError.invalid }
             data = imported; summary = result; selectedRegion = result.region; sourceURL = url; fileName = url.lastPathComponent
             loadBasicValues(from: localURL)
@@ -153,10 +155,7 @@ final class SaveStore: ObservableObject {
             let offset = version >= 10 || region != .jp ? 7 : 6
             return SaveSummary(region: region, gameVersion: version, catFood: readInt(data, at: offset))
         }
-        let version = readInt(data, at: 0)
-        guard version > 0 else { return nil }
-        let offset = version >= 10 ? 7 : 6
-        return SaveSummary(region: .en, gameVersion: version, catFood: readInt(data, at: offset))
+        return nil
     }
 
     private static func validHash(_ data: Data, region: SaveRegion) -> Bool {

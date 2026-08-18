@@ -1,5 +1,6 @@
 import SwiftUI
 import UniformTypeIdentifiers
+import UIKit
 
 struct RootView: View {
     @EnvironmentObject private var store: SaveStore
@@ -14,12 +15,47 @@ struct RootView: View {
         }
         .tint(.orange)
         .task { store.prepareFilesDirectories(); store.importPendingSave() }
-        .fileImporter(isPresented: $importing, allowedContentTypes: [.item], allowsMultipleSelection: false) { result in
-            if case let .success(urls) = result, let url = urls.first { store.importSave(from: url) }
+        .sheet(isPresented: $importing) {
+            SaveDocumentPicker(
+                onSelection: { result in
+                    importing = false
+                    if case let .success(urls) = result, let url = urls.first { store.importSave(from: url) }
+                },
+                onCancel: { importing = false }
+            )
+            .ignoresSafeArea()
         }
         .alert("BCEditor", isPresented: Binding(get: { store.message != nil }, set: { if !$0 { store.message = nil } })) {
             Button("OK", role: .cancel) { store.message = nil }
         } message: { Text(store.message ?? "") }
+    }
+}
+
+struct SaveDocumentPicker: UIViewControllerRepresentable {
+    let onSelection: (Result<[URL], Error>) -> Void
+    let onCancel: () -> Void
+
+    func makeCoordinator() -> Coordinator { Coordinator(onSelection: onSelection, onCancel: onCancel) }
+
+    func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
+        let picker = UIDocumentPickerViewController(forOpeningContentTypes: [.data], asCopy: true)
+        picker.delegate = context.coordinator
+        picker.allowsMultipleSelection = false
+        picker.shouldShowFileExtensions = true
+        return picker
+    }
+
+    func updateUIViewController(_ controller: UIDocumentPickerViewController, context: Context) {}
+
+    final class Coordinator: NSObject, UIDocumentPickerDelegate {
+        let onSelection: (Result<[URL], Error>) -> Void
+        let onCancel: () -> Void
+        init(onSelection: @escaping (Result<[URL], Error>) -> Void, onCancel: @escaping () -> Void) {
+            self.onSelection = onSelection
+            self.onCancel = onCancel
+        }
+        func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) { onSelection(.success(urls)) }
+        func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) { onCancel() }
     }
 }
 
